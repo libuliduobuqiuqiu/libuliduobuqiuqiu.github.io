@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title></title>
-    <url>/2023/05/24/Python%20Socket%E7%BC%96%E7%A8%8B/</url>
+    <title>Python Socket编程</title>
+    <url>/2021/04/25/Python%20Socket%E7%BC%96%E7%A8%8B/</url>
     <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>关于Python Socket编程，首先需要了解几个计算机网络的知识，通过以下的几个问题，有助于更好的理解Socket编程的意义，以及整个框架方面的知识：</p>
 <ul>
 <li><p>TCP和UDP协议本质上的区别？</p>
@@ -88,10 +88,16 @@
 <p>关于本篇介绍Python Socket编程，大都是皮毛，只是谈到了Python实际处理socket的几个模块，<br>关于socket底层方面的知识并未提及，先了解个大概，从实际使用方面出发，在实际使用过程中结合<br>计算机网络知识，能够理解socket在整个TCP&#x2F;IP协议栈中的作用。<br><br>socket和socketserver模块都可以用来编写网络程序，不同的是socketserver省事很多，你可以专注<br>业务逻辑，不用去理会socket的各种细节，包括不限于多线程&#x2F;多进程，接收数据，发送数据，通信过程。<br></p>
 </blockquote>
 ]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python Socket</tag>
+      </tags>
   </entry>
   <entry>
-    <title></title>
-    <url>/2023/05/24/Python%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%A8%A1%E5%9D%97%EF%BC%88sys.argv,argparse,click%EF%BC%89/</url>
+    <title>Python命令行模块（sys.argv,argparse,click）</title>
+    <url>/2020/09/12/Python%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%A8%A1%E5%9D%97%EF%BC%88sys.argv,argparse,click%EF%BC%89/</url>
     <content><![CDATA[<blockquote>
 <p>Python作为一门脚本语言，经常作为脚本接受命令行传入参数，Python接受命令行参数大概有三种方式。因为在日常工作场景会经常使用到，这里对这几种方式进行总结。</p>
 </blockquote>
@@ -140,10 +146,16 @@
 </blockquote>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>关于这三个模块值得注意的是，尽量贴近自己应用场景去选择，真正的做到自己能够方便使用才是你去使用这些模块的原因。</p>
 ]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python Argv argparse cli</tag>
+      </tags>
   </entry>
   <entry>
-    <title></title>
-    <url>/2023/05/24/Python%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%88%A9%E5%99%A8%E2%80%94Apscheduler/</url>
+    <title>Python定时任务利器—Apscheduler</title>
+    <url>/2020/12/07/Python%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%88%A9%E5%99%A8%E2%80%94Apscheduler/</url>
     <content><![CDATA[<h2 id="导语"><a href="#导语" class="headerlink" title="导语"></a>导语</h2><p>在工作场景遇到了这么一个场景，就是需要定期去执行一个缓存接口，用于同步设备配置。首先想到的就是Linux上的crontab，可以定期，或者间隔一段时间去执行任务。但是如果你想要把这个定时任务作为一个模块集成到Python项目中，或者想持久化任务，显然crontab不太适用。Python的APScheduler模块能够很好的解决此类问题，所以专门写这篇文章，从简单入门开始记录关于APScheduler最基础的使用场景，以及解决持久化任务的问题，最后结合其他框架深层次定制定时任务模块这几个点入手。</p>
 <h2 id="简单介绍"><a href="#简单介绍" class="headerlink" title="简单介绍"></a>简单介绍</h2><p>先简单介绍一下Apscheduler模块包含的四种组件：</p>
 <ul>
@@ -194,6 +206,12 @@
 </ul>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>最后总结一下，首先你要设置一个作业存储器用于在调度程序崩溃重新恢复时，还能够在作业存储器中获取到作业继续执行；然后你需要设置一个执行器，这个根据作业的类型，比如时一个CPU密集型的任务，那就可以用进程池执行器，默认是用线程池执行器；最后创建配置调度器，启动调度，可以在启动前添加作业，也可以在启动后添加，删除，获取作业。(在这里需要明白的一点就是应用程序不会直接去操作作业存储器，作业或者执行器，而是调度器提供适当的接口来处理这些接口。)<br><br/>ApScheduler是一个不错的定时任务库，能够动态的添加删除，同时也支持不同的触发器类型，这也是它的优势，相反一些如果是静态任务，其实可以用如linux的crontab工具去做定时任务。有关这方面的记录还会持续更新，如果有什么问题，可以提出来，大家一起探讨。</p>
 ]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python Apscheduler</tag>
+      </tags>
   </entry>
   <entry>
     <title>Hello World</title>
@@ -220,8 +238,8 @@
       </tags>
   </entry>
   <entry>
-    <title></title>
-    <url>/2023/05/24/%E6%80%BB%E7%BB%93%E6%8A%80%E6%9C%AF%E6%96%87%E7%AB%A0%E5%86%99%E4%BD%9C%E6%8A%80%E5%B7%A7/</url>
+    <title>总结技术文章写作技巧</title>
+    <url>/2020/07/30/%E6%80%BB%E7%BB%93%E6%8A%80%E6%9C%AF%E6%96%87%E7%AB%A0%E5%86%99%E4%BD%9C%E6%8A%80%E5%B7%A7/</url>
     <content><![CDATA[<h2 id="1、端正心态"><a href="#1、端正心态" class="headerlink" title="1、端正心态"></a>1、端正心态</h2><p>&amp;nbsp; 对于写作不要产生恐惧，起点期望放低点，没有什么事情能一蹴而就，同时可以通过阅读其他的技术文章，模仿行文方式，不断重复练习，对比吸取相关长处，补足自己的缺点。</p>
 <h2 id="2、明确定位"><a href="#2、明确定位" class="headerlink" title="2、明确定位"></a>2、明确定位</h2><p>&amp;nbsp;对于这篇文章需要给什么类型的读者看，需要怎样的技术背景，需要怎样的技术栈，以及相关的项目背景。明确了定位方便切入不同读者的阅读需求。</p>
 <h2 id="3、标题切入"><a href="#3、标题切入" class="headerlink" title="3、标题切入"></a>3、标题切入</h2><p>&amp;nbsp; 对于文章的标题需要提供给读者一个很好的切入角度，整篇文章围绕着标题，起到文章的中心作用。</p>
@@ -244,5 +262,110 @@
 <p>参考文章：<a class="link"   href="http://news.51cto.com/art/201904/594736.htm" >http://news.51cto.com/art/201904/594736.htm<i class="fas fa-external-link-alt"></i></a></p>
 </blockquote>
 ]]></content>
+      <categories>
+        <category>笔记</category>
+      </categories>
+      <tags>
+        <tag>笔记 写作 技术文章</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>浅析Python项目部署</title>
+    <url>/2020/12/15/%E6%B5%85%E6%9E%90Python%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2/</url>
+    <content><![CDATA[<h2 id="基础理论"><a href="#基础理论" class="headerlink" title="基础理论"></a>基础理论</h2><h3 id="关于Web服务器和应用服务器"><a href="#关于Web服务器和应用服务器" class="headerlink" title="关于Web服务器和应用服务器"></a>关于Web服务器和应用服务器</h3><p>基本概念：</p>
+<ul>
+<li>Web服务器主要功能就是存储、处理、传递网页，客户端和服务器之间基于HTTP协议进行通信。</li>
+<li>应用服务器主要是处理动态请求，调用相应的对象完成对请求的处理，返回响应的结果。</li>
+</ul>
+<p>两者之间的区别：</p>
+<ul>
+<li>Web服务器主要是以HTTP为核心，WEB UI为向导的应用，处理一些静态请求。</li>
+<li>应用服务器虽然也支持HTTP协议，但应用服务器可以通过很多协议为应用程序提供商业逻辑。</li>
+</ul>
+<h3 id="Python项目部署架构"><a href="#Python项目部署架构" class="headerlink" title="Python项目部署架构"></a>Python项目部署架构</h3><p>在我们平时搭建一个Python Web项目时，比如Django框架的项目，这时候常见的服务端架构：</p>
+<ol>
+<li>Nginx服务器作为代理服务器，代理处理静态资源（js,css,图片)请求，以及动态请求（增删改查）转发以及返回处理结果。</li>
+<li>uWSGI服务器负责接受Nginx服务器，处理过后转发给Django应用，接受Django应用处理返回的信息，在转发给nginx</li>
+<li>Django应用从uWSGI服务器接收请求，调用相应的业务逻辑，处理数据渲染相应的页面并且返回给uWSGI服务器。</li>
+</ol>
+<h3 id="关于cgi、wsgi、uwsgi、http协议"><a href="#关于cgi、wsgi、uwsgi、http协议" class="headerlink" title="关于cgi、wsgi、uwsgi、http协议"></a>关于cgi、wsgi、uwsgi、http协议</h3><p>接下来针对上文提到Django项目部署架构，聊聊这几个协议在这过程中的作用：</p>
+<ul>
+<li>http协议：客户端程序和Nginx服务器通信就是基于http协议，而Nginx服务器作为一个代理服务器，会根据HTTP请求返回静态资源还是转发动态请求。</li>
+<li>cgi协议：cgi协议是外部应用程序和Web服务器之间的接口标准，简而言之，就是规定如何让一个程序与Web服务器程序之间通信。</li>
+<li>wsgi协议：基于现存的CGI标准设计，一个Python web框架编写的应用程序和Web服务器之间通信的规范。</li>
+<li>uwsgi：uWSGI服务器独有的协议，用于uWSGI服务器和其他Web服务器之间的数据通信</li>
+</ul>
+<h3 id="关于cgi、fastcgi、php-fpm、FastCGI-额外"><a href="#关于cgi、fastcgi、php-fpm、FastCGI-额外" class="headerlink" title="关于cgi、fastcgi、php-fpm、FastCGI(额外)"></a>关于cgi、fastcgi、php-fpm、FastCGI(额外)</h3><ul>
+<li>CGI：是 Web Server 与 Web Application 之间数据交换的一种协议。</li>
+<li>FastCGI：同 CGI，是一种通信协议，但比 CGI 在效率上做了一些优化。同样，SCGI 协议与 FastCGI 类似。</li>
+<li>PHP-CGI：是 PHP （Web Application）对 Web Server 提供的 CGI 协议的接口程序。</li>
+<li>PHP-FPM：是 PHP（Web Application）对 Web Server 提供的 FastCGI 协议的接口程序，额外还提供了相对智能一些任务管理。</li>
+</ul>
+<h3 id="关于uWSGI、Nginx服务器"><a href="#关于uWSGI、Nginx服务器" class="headerlink" title="关于uWSGI、Nginx服务器"></a>关于uWSGI、Nginx服务器</h3><p>简单来讲，uWSGI也是一个Web服务器，他虽然同时实现了http、uwsgi、wsgi协议,但是更多被作为应用服务器和应用程序之间进行通信。<br>那么这里就有个疑问了，为什么uWSGI都能直接处理http请求了，还需要Nginx服务器？这样处理有几点原因：</p>
+<ul>
+<li>首先Nginx服务器在这过程中属于代理服务器的角色，每当一个http请求进来，就需要经过Nginx服务器，而Nginx服务器的优势就在于异步非阻塞的网络模型，它能够在单线程的情况下处理大量的请求，针对处理静态资源请求；而对于动态请求，能够通过缓存的功能，并且配合CDN进行优化，这样能够极大降低系统的负载，降低客户端响应时间。</li>
+<li>其次，Nginx服务器能够进行负载均衡，启用多个后端服务器，通过Nginx对HTTP请求进行分配，这样能够极大优化架构的效率，提高处理的性能。</li>
+<li>最后，Nginx有很多模块支持一些比如白名单，黑名单功能，并且配合keepalive实现高可用的架构.<br>总而言之，Nginx服务器在处理http请求上，都有着uWSGI没有的优势，所以在日常部署环境中，经常会使用到Nginx+uWSGI。</li>
+</ul>
+<h2 id="uWSGI"><a href="#uWSGI" class="headerlink" title="uWSGI"></a>uWSGI</h2><h3 id="安装部署"><a href="#安装部署" class="headerlink" title="安装部署"></a>安装部署</h3><p>uWSGI有两种安装方式，一种是通过pip安装，一种是通过源码安装。这里就简单介绍pip安装方式，源码安装有兴趣可以私下自己了解。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip install uwsgi</span><br></pre></td></tr></table></figure>
+
+<h3 id="相关文件"><a href="#相关文件" class="headerlink" title="相关文件"></a>相关文件</h3><p>uWSGI服务器在启动的过程中主要涉及到以下这几个文件，其中uwsgi.sock还会涉及到Nginx相关部署的问题，在Nginx配置的时候回继续展开讲。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(venv) [root@mbb-48 uwsgi]# tree .</span><br><span class="line">.</span><br><span class="line">|-- uwsgi.ini       # uwsgi配置文件</span><br><span class="line">|-- uwsgi.log       # uwsgi日志文件</span><br><span class="line">|-- uwsgi.pid       # uwsgi运行进程pid</span><br><span class="line">|-- uwsgi.sock      # uwsgi socket</span><br><span class="line">`-- uwsgi.status    # uwsgi状态文件</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置示例"><a href="#配置示例" class="headerlink" title="配置示例"></a>配置示例</h3><p>以下配置是自己一个项目中用到的，其中的配置参数都是比较常见通用。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[uwsgi]</span><br><span class="line">chdir=/data/Novel/novel_test</span><br><span class="line">module=novel_test.wsgi:application</span><br><span class="line">home=/data/Novel/venv</span><br><span class="line">static-map=/static=/data/Novel/novel_test/static</span><br><span class="line">threads=8</span><br><span class="line">http=0.0.0.0:23606</span><br><span class="line">master=true</span><br><span class="line">vacuum=true</span><br><span class="line">thunder-lock=true</span><br><span class="line">uid=root</span><br><span class="line">gid=root</span><br><span class="line">harakiri=30</span><br><span class="line">post-buffering=4096</span><br><span class="line">socket=%(chdir)/uwsgi/uwsgi.sock</span><br><span class="line">stats=%(chdir)/uwsgi/uwsgi.status</span><br><span class="line">pidfile=%(chdir)/uwsgi/uwsgi.pid</span><br><span class="line">daemonize=%(chdir)/uwsgi/uwsgi.log</span><br></pre></td></tr></table></figure>
+<h4 id="配置解析"><a href="#配置解析" class="headerlink" title="配置解析"></a>配置解析</h4><ul>
+<li>chdir: 定义项目的目录</li>
+<li>module: 要使用的 WSGI 模块，不同的Python web框架中使用方式也不太一样。</li>
+<li>home: 指定Python执行环境，这个参数针对有不同Python运行环境，比如virtualenv创建独立Python环境的情况。</li>
+<li>static-map: 映射静态目录</li>
+<li>threads: 线程数量</li>
+<li>http: 指定启动地址和端口</li>
+<li>master: 启用主进程</li>
+<li>vacuum: 退出时，清理产生的中间文件（sock,pid,stats)</li>
+<li>thunder-lock: 序列化接收的内容</li>
+<li>uid:  指定启动用户</li>
+<li>gid:  指定启动组</li>
+<li>harakiri: 设置服务器响应时间</li>
+<li>post-buffering: 启用缓冲</li>
+<li>socket:   socket文件存放路径</li>
+<li>stats：   stats文件存放路径</li>
+<li>pidfile:  pid文件存放路径</li>
+<li>daemonize:    日志文件输出文件路径</li>
+</ul>
+<h4 id="额外配置"><a href="#额外配置" class="headerlink" title="额外配置"></a>额外配置</h4><ul>
+<li>processes: 进程数量</li>
+<li>buffer-size:  设置缓冲大小</li>
+<li>listen:   设置监听队列大小（默认100）</li>
+<li>max-requests: 每个工作进程请求书的最高上限</li>
+<li>procname-prefix-spaced:   工作进程的前缀名</li>
+<li>wsgi-file: 指定加载WSGI文件</li>
+</ul>
+<h3 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h3><p>上面介绍了相关常用的配置参数，当设置uWSGI参数后，需要启动指定配置文件，以及有关暂停，重启的动作。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">uwsgi --ini uwsgi.ini   # 启动uWSGI</span><br><span class="line">uwsgi --stop uwsgi.pid  # 暂停uWSGI</span><br><span class="line">uwsgi --reload uwsgi.pid    # 重启uWSGI</span><br></pre></td></tr></table></figure>
+
+<h3 id="服务监控"><a href="#服务监控" class="headerlink" title="服务监控"></a>服务监控</h3><p>uWSGI之一Stats服务器机制，它能将uWSGI状态作为一个JSON对象导出一个socket中，只需要像我们前面配置uWSGI配置文件一样，添加stats选项，跟着一个有效的socket地址接口。<br><br>当你配置完毕后，就可以通过客户端连接到指定的socket地址，将会获得一个包含uWSGI内部统计数据的JSON对象。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">uwsgi --connect-and-read uwsgi.status</span><br></pre></td></tr></table></figure>
+<p>执行完这个命令后，读取的返回的结果是一个json字符串，字符串中包括每个线程的状态，整个应用的负载，版本，监听队列等详细的信息。</p>
+<h4 id="uwsgitop查看实时状态"><a href="#uwsgitop查看实时状态" class="headerlink" title="uwsgitop查看实时状态"></a>uwsgitop查看实时状态</h4><p>uwsgitop是一个开源的实时监控uWSGI服务器状态的工具，安装也十分简单：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip install uwsgitop</span><br></pre></td></tr></table></figure>
+<p>具体uwsgitop像一个top命令，监听应用程序并且使用socket地址进行调用，查看进程运行状态，运行详细信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">uwsgitop uwsgi/uwsgi.status</span><br><span class="line">uwsgi-2.0.19.1 - Sun Sep 20 15:58:48 2020 - req: 6 - RPS: 0 - lq: 0 - tx: 67.6K</span><br><span class="line">node: mbb-48 - cwd: /data/Novel/novel_test - uid: 0 - gid: 0 - masterpid: 15109</span><br><span class="line"> WID    %       PID     REQ     RPS     EXC     SIG     STATUS  AVG     RSS     VSZ     TX      ReSpwn  HC      RunT    LastSpwn</span><br><span class="line"> 1	100.0   15144   6	0	0	0	idle    15ms    0	0	67.6K   1	0	125.449 15:48:08</span><br><span class="line">  :2    16.7    -	1	0	-	-	idle    -	-	-	-	-</span><br><span class="line">  :3    16.7    -	1	0	-	-	idle    -	-	-	-	-</span><br><span class="line">  :0    33.3    -	2	0	-	-	idle    -	-	-	-	-</span><br><span class="line">  :1    33.3    -	2	0	-	-	idle    -	-	-	-	-</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>具体有兴趣的同学可以参考github地址：</p>
+<blockquote>
+<p><a class="link"   href="https://github.com/xrmx/uwsgitop" >https://github.com/xrmx/uwsgitop<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>关于uWSGI服务器相关使用就总结到这里，因为在平时工作中会经常接触到，但是由于没有应用到一些高并发的场景，对于uwsgi调优方面没有多少经验，等待以后遇到此类问题再继续总结性能调优方面的问题。同时有关Nginx方面的配置留到下一篇文章继续讲，未完待续。。。。。</p>
+<h3 id="参考文章："><a href="#参考文章：" class="headerlink" title="参考文章："></a>参考文章：</h3><blockquote>
+<p><a class="link"   href="https://uwsgi-docs-zh.readthedocs.io/zh_CN/latest/StatsServer.html" >https://uwsgi-docs-zh.readthedocs.io/zh_CN/latest/StatsServer.html<i class="fas fa-external-link-alt"></i></a> <br><br><a class="link"   href="https://uwsgi-docs.readthedocs.io/en/latest/Options.html#harakiri" >https://uwsgi-docs.readthedocs.io/en/latest/Options.html#harakiri<i class="fas fa-external-link-alt"></i></a> <br><br><a class="link"   href="https://www.jianshu.com/p/c3b13b5ad3d7" >https://www.jianshu.com/p/c3b13b5ad3d7<i class="fas fa-external-link-alt"></i></a> <br><br><a class="link"   href="https://docs.djangoproject.com/zh-hans/2.2/howto/deployment/wsgi/uwsgi/" >https://docs.djangoproject.com/zh-hans/2.2/howto/deployment/wsgi/uwsgi/<i class="fas fa-external-link-alt"></i></a> <br><br><a class="link"   href="https://blog.51cto.com/mbb97/2151933" >https://blog.51cto.com/mbb97/2151933<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python Web开发 项目部署</tag>
+      </tags>
   </entry>
 </search>
