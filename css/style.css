@@ -2604,7 +2604,7 @@ pre .javascript .function {
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  background: url("/images/lsk_bg.png") center center/cover no-repeat;
+  background: url("/images/lsk_bg.jpg") center center/cover no-repeat;
   background-position-y: 70px;
 }
 @media (max-width: 800px) {
