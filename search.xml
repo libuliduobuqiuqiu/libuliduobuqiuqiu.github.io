@@ -1,124 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Python命令行模块（sys.argv,argparse,click）</title>
-    <url>/2020/09/12/Python%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%A8%A1%E5%9D%97%EF%BC%88sys.argv,argparse,click%EF%BC%89/</url>
-    <content><![CDATA[<blockquote>
-<p>Python作为一门脚本语言，经常作为脚本接受命令行传入参数，Python接受命令行参数大概有三种方式。因为在日常工作场景会经常使用到，这里对这几种方式进行总结。</p>
-</blockquote>
-<h2 id="命令行参数模块"><a href="#命令行参数模块" class="headerlink" title="命令行参数模块"></a>命令行参数模块</h2><p>这里命令行参数模块平时工作中用到最多就是这三种模块：sys.argv,argparse,click。sys.argv和argparse都是内置模块，click则是第三方模块。</p>
-<h3 id="sys-argv模块（内置模块）"><a href="#sys-argv模块（内置模块）" class="headerlink" title="sys.argv模块（内置模块）"></a>sys.argv模块（内置模块）</h3><p>先看一个简单的示例：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    file_name = sys.argv[<span class="number">0</span>]</span><br><span class="line">    name =  sys.argv[<span class="number">1</span>]</span><br><span class="line">    age = sys.argv[<span class="number">2</span>]</span><br><span class="line">    sex = sys.argv[<span class="number">3</span>]</span><br><span class="line">    other = sys.argv[<span class="number">4</span>:]</span><br><span class="line">    hello(name, age, sex, *other)</span><br></pre></td></tr></table></figure>
-<p>调用脚本：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13 man nibi ss</span><br></pre></td></tr></table></figure>
-<p>脚本输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line">nibi</span><br><span class="line">ss</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>sys.argv模块不难理解，命令参数作为列表传入Python脚本中，argv[0]是脚本的名字，argv[1]则是第一个参数，后面以此类推。所以在脚本中只需要提取列表中的参数即可使用。上面演示的是正确调用Python脚本的情况，下面则是调用失败的情况。</p>
-</blockquote>
-<p>错误调用脚本：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13</span><br></pre></td></tr></table></figure>
-<p>错误输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;test_sysargv.py&quot;, line 16, in &lt;module&gt;</span><br><span class="line">    sex = sys.argv[3]</span><br><span class="line">IndexError: list index out of range</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>关于错误也很好理解，经典的列表索引超出范围，之所列表索引超出范围，没有传入足够的参数。当然你可以使用try…except捕获错误。但是这种做法太过死板，因为在命令行中必须按照脚本规定的参数顺序输入参数，所以这种模块使用一般是针对一些需要的参数比较少并且固定的脚本。</p>
-</blockquote>
-<h3 id="argparse模块（内置模块）"><a href="#argparse模块（内置模块）" class="headerlink" title="argparse模块（内置模块）"></a>argparse模块（内置模块）</h3><p>同样的先看一个简单的示例：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"></span><br><span class="line">parser = argparse.ArgumentParser(description=<span class="string">&#x27;Test for argparse module.&#x27;</span>)   <span class="comment"># 构建命令参数实例</span></span><br><span class="line">parser.add_argument(<span class="string">&quot;--name&quot;</span>, <span class="string">&quot;-n&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--age&quot;</span>, <span class="string">&quot;-a&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--sex&quot;</span>, <span class="string">&quot;-s&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--type&quot;</span>, <span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 非必要属性&quot;</span>, required=<span class="literal">True</span>)</span><br><span class="line">args = parser.parse_args()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=args.<span class="built_in">type</span>))</span><br><span class="line">    <span class="keyword">if</span> args.name <span class="keyword">and</span> args.age <span class="keyword">and</span> args.sex:</span><br><span class="line">        hello(args.name, args.age, args.sex)</span><br></pre></td></tr></table></figure>
-<p>执行脚本：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -t json -n zhangsan -a 13 -s man</span><br></pre></td></tr></table></figure>
-<p>脚本成功输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: json</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>关于argparse模块的使用，首先需要生成一个命令行参数的实例，然后通过对这个对象添加属性，添加需要从命令行获取的参数，包括哪些是必要参数（required&#x3D;True），哪些非必要参数，同时也可以对每个参数进行帮助提示（help&#x3D;””）。</p>
-</blockquote>
-<blockquote>
-<p>而上面示例中分别添加了四个属性，–name和-n同时可以再命令行中使用，都表示了参数name。ArgumentParser通过parse_ags()方法解析参数，检查命令行，将每个参数转换为适当的类型，所以在脚本中同时也可以使用args.n和args.name获取到参数，相对应的如果没有传入该参数，脚本中则获取到None。</p>
-</blockquote>
-<p>查看命令行参数之后脚本的帮助提示：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -h</span><br><span class="line">usage: test_argparse.py [-h] [--name NAME] [--age AGE] [--sex SEX] --type TYPE</span><br><span class="line"></span><br><span class="line">Test for argparse module.</span><br><span class="line"></span><br><span class="line">optional arguments:</span><br><span class="line">  -h, --help            show this help message and exit</span><br><span class="line">  --name NAME, -n NAME  name attribute: 非必要属性</span><br><span class="line">  --age AGE, -a AGE     age attribute: 非必要属性</span><br><span class="line">  --sex SEX, -s SEX     sex attribute: 非必要属性</span><br><span class="line">  --type TYPE, -t TYPE  type attribute: 非必要属性</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>另外在添加命令行参数的属性中，还有更多的设置，多余的可以参考Python官方文档，里面都有详细的标注，这里就不展开来讲，总结的就是关于argparse模块的使用非常简便，同时十分人性化，也很符合日常工作的需要。</p>
-</blockquote>
-<h3 id="click模块"><a href="#click模块" class="headerlink" title="click模块"></a>click模块</h3><p>先开一个简单的使用示例：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> click</span><br><span class="line"></span><br><span class="line"><span class="meta">@click.command()</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--name&quot;</span>, default=<span class="string">&quot;zhangsan&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--age&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--sex&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 必要属性&quot;</span>, required=<span class="literal">True</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">t, name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=t))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    hello()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>执行脚本：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_click.py -t 1 --age 13 --sex man</span><br></pre></td></tr></table></figure>
-<p>脚本输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: 1</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>click模块是Flask团队优秀的开源项目，使用方法和argparse模块很相似，同样为命令行封装了大量的方法，使用者只需要专注代码功能的实现。<br> click模块和argparse模块不同的地方就是，click模块使用装饰器的方式给函数添加命令行属性，关于装饰器简单来讲就是能够在不修改原有函数的基础上添加功能。虽然使用装饰器但是添加命令行属性的方式和argparse模块很相似，包括options中常用的参数含义也有很多类似的地方。值得注意的就是一开始需要通过command()将函数成为命令行的接口。<br> 关于的click模块的就大致讲到这里，其余有兴趣的可以再去了解一下。</p>
-</blockquote>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>关于这三个模块值得注意的是，尽量贴近自己应用场景去选择，真正的做到自己能够方便使用才是你去使用这些模块的原因。</p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python | Argv | argparse | cli</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Python定时任务利器—Apscheduler</title>
-    <url>/2020/12/07/Python%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%88%A9%E5%99%A8%E2%80%94Apscheduler/</url>
-    <content><![CDATA[<h2 id="导语"><a href="#导语" class="headerlink" title="导语"></a>导语</h2><p>在工作场景遇到了这么一个场景，就是需要定期去执行一个缓存接口，用于同步设备配置。首先想到的就是Linux上的crontab，可以定期，或者间隔一段时间去执行任务。但是如果你想要把这个定时任务作为一个模块集成到Python项目中，或者想持久化任务，显然crontab不太适用。Python的APScheduler模块能够很好的解决此类问题，所以专门写这篇文章，从简单入门开始记录关于APScheduler最基础的使用场景，以及解决持久化任务的问题，最后结合其他框架深层次定制定时任务模块这几个点入手。</p>
-<h2 id="简单介绍"><a href="#简单介绍" class="headerlink" title="简单介绍"></a>简单介绍</h2><p>先简单介绍一下Apscheduler模块包含的四种组件：</p>
-<ul>
-<li>Trigger触发器</li>
-<li>Job作业</li>
-<li>Excutor执行器</li>
-<li>Scheduler调度器</li>
-</ul>
-<p>大概了解了Apscheduler包含的几种概念，现在先来看一下一个简单的示例：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> apscheduler.schedulers.blocking <span class="keyword">import</span> BlockingScheduler</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>():</span><br><span class="line">    <span class="built_in">print</span>(time.strftime(<span class="string">&quot;%c&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    scheduler = BlockingScheduler()</span><br><span class="line">    scheduler.add_job(hello, <span class="string">&#x27;interval&#x27;</span>, seconds=<span class="number">5</span>)</span><br><span class="line">    scheduler.start()</span><br></pre></td></tr></table></figure>
-<p>示例的输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Thu Dec  3 16:01:20 2020</span><br><span class="line">Thu Dec  3 16:01:25 2020</span><br><span class="line">Thu Dec  3 16:01:30 2020</span><br><span class="line">Thu Dec  3 16:01:35 2020</span><br><span class="line">Thu Dec  3 16:01:40 2020</span><br><span class="line">..........</span><br></pre></td></tr></table></figure>
-<p>这个简单的示例，我们用上面提到几种组件分析一下运行逻辑：</p>
-<ul>
-<li>首先是Scheduler调度器，这个示例使用的BlockingScheduler调度器，在官方文档中的解释是，BlockingScheduler适合当你的这个定时任务程序是唯一运行的程序；换言之，则是BlockingScheduler调度器是一个阻塞调度器，当程序运行这种调度器，进程则会阻塞，无法执行其他操作；</li>
-<li>其次是Job作业和触发器，这两个放在一起讲是因为，在定义作业的时候，你就需要选择一个触发器，这里选择的是interval触发器，这种触发器会以固定时间间隔运行作业。换言之，为调度器添加一个hello的工作，并以每5秒的时间间隔执行任务。</li>
-<li>最后就是执行器，默认是ThreadPoolExcutor执行器，他们将任务中可调用对象交给线程池执行操作，等完成操作后，执行器会通知调度程序。</li>
-</ul>
-<p>内置的三种Trigger触发器类型：</p>
-<ul>
-<li>date:特定时间仅运行一次作业</li>
-<li>interval: 固定的时间间隔内运行一次作业</li>
-<li>cron: 在一天内特定的时间定期运行作业</li>
-</ul>
-<p>常见的Scheduler调度器:</p>
-<ul>
-<li>BlockingScheduler: 调度程序是流程中唯一运行的东西</li>
-<li>BackgroundScheduler: 调度程序在应用程序内部的后台运行时使用</li>
-<li>AsyncIOScheduler: 应用程序使用asyncio模块</li>
-<li>GeventScheduler: 应用程序使用gevent模块</li>
-<li>TornadoScheduler：构建Tornado应用程序时使用</li>
-<li>TwistedScheduler: 构建Tornado应用程序时使用</li>
-<li>QtScheduler: 在构建QT应用程序时使用</li>
-</ul>
-<p>常见的JobStore：</p>
-<ul>
-<li>MemoryJobStore</li>
-<li>MongoDBJobStore</li>
-<li>SQLAlchemyJobStore</li>
-<li>RedisJobStore</li>
-</ul>
-<h2 id="进阶使用"><a href="#进阶使用" class="headerlink" title="进阶使用"></a>进阶使用</h2><p>通过上面一个简单的示例了解大概的工作流程，以及各个组件在整个流程中的作用，以下的示例是Flask Web框架结合使用Apscheduler定时器，定时执行任务。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask, Blueprint, request</span><br><span class="line"><span class="keyword">from</span> apscheduler.executors.pool <span class="keyword">import</span> ThreadPoolExecutor </span><br><span class="line"><span class="keyword">from</span> apscheduler.schedulers.background <span class="keyword">import</span> BackgroundScheduler</span><br><span class="line"><span class="keyword">from</span> apscheduler.jobstores.redis <span class="keyword">import</span> RedisJobStore</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line">executors = &#123;<span class="string">&quot;default&quot;</span>: ThreadPoolExecutor(<span class="number">5</span>)&#125;</span><br><span class="line">default_redis_jobstore = RedisJobStore(db=<span class="number">2</span>, </span><br><span class="line">        jobs_key=<span class="string">&quot;apschedulers.default_jobs&quot;</span>,</span><br><span class="line">        run_times_key=<span class="string">&quot;apschedulers.default_run_times&quot;</span>,</span><br><span class="line">        host = <span class="string">&#x27;127.0.0.1&#x27;</span>,</span><br><span class="line">        port = <span class="number">6379</span></span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">scheduler = BackgroundScheduler(executors=executors)</span><br><span class="line">scheduler.add_jobstore(default_redis_jobstore)</span><br><span class="line">scheduler.start()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">say_hello</span>():</span><br><span class="line">    <span class="built_in">print</span>(time.strftime(<span class="string">&quot;%c&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/get_job&quot;</span>, methods=[<span class="string">&#x27;GET&#x27;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_job</span>():</span><br><span class="line">    <span class="keyword">if</span> scheduler.get_job(<span class="string">&quot;say_hello_test&quot;</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;YES&quot;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;NO&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/start_job&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">start_job</span>():</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> scheduler.get_job(<span class="string">&quot;say_hello_test&quot;</span>):</span><br><span class="line">        scheduler.add_job(say_hello, <span class="string">&quot;interval&quot;</span>, seconds=<span class="number">5</span>, <span class="built_in">id</span>=<span class="string">&quot;say_hello_test&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Start Scuessfully!&quot;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Started Failed&quot;</span></span><br><span class="line">   </span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/remove_job&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">remove_job</span>():</span><br><span class="line">    <span class="keyword">if</span> scheduler.get_job(<span class="string">&quot;say_hello_test&quot;</span>):</span><br><span class="line">        scheduler.remove_job(<span class="string">&quot;say_hello_test&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Delete Successfully!&quot;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Delete Failed&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    app.run(host=<span class="string">&quot;127.0.0.1&quot;</span>, port=<span class="number">8787</span>, debug=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
-<ul>
-<li>先分析Jobstore，这里使用的是RedisJobstore，将任务序列化存入到Redis数据库中。这里顺便提一下，为什么需要设置作业存储器，原因是当调度器程序崩溃时，仍然能够保留作业，当然选择什么作业存储器，可以根据具体的工作场景，目前主流的mysql，mongodb，redis，SQLite基本都支持;</li>
-<li>然后再看看Scheduler，这里使用的时BackgroundScheduler，因为这里要求调度程序不能阻塞flask程序的正常接收请求，所以选在BackgrounScheduler让它在开始执行任务时是在后台运行的，不会阻塞主线程;</li>
-<li>最后看看工作的逻辑，这里get_job获取作业的状态，查看作业是否存在，start_job则是先判断作业是否启动，然后再决定启动操作，remove_job则是停止作业。而这里的作业定义则是通过interval触发器，每五秒执行一次say_hello任务；</li>
-</ul>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>最后总结一下，首先你要设置一个作业存储器用于在调度程序崩溃重新恢复时，还能够在作业存储器中获取到作业继续执行；然后你需要设置一个执行器，这个根据作业的类型，比如时一个CPU密集型的任务，那就可以用进程池执行器，默认是用线程池执行器；最后创建配置调度器，启动调度，可以在启动前添加作业，也可以在启动后添加，删除，获取作业。(在这里需要明白的一点就是应用程序不会直接去操作作业存储器，作业或者执行器，而是调度器提供适当的接口来处理这些接口。)<br><br/>ApScheduler是一个不错的定时任务库，能够动态的添加删除，同时也支持不同的触发器类型，这也是它的优势，相反一些如果是静态任务，其实可以用如linux的crontab工具去做定时任务。有关这方面的记录还会持续更新，如果有什么问题，可以提出来，大家一起探讨。</p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python | Apscheduler</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Python Socket编程</title>
     <url>/2021/04/25/Python%20Socket%E7%BC%96%E7%A8%8B/</url>
     <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>关于Python Socket编程，首先需要了解几个计算机网络的知识，通过以下的几个问题，有助于更好的理解Socket编程的意义，以及整个框架方面的知识：</p>
@@ -210,7 +92,67 @@
         <category>Python</category>
       </categories>
       <tags>
-        <tag>Python | Socket</tag>
+        <tag>Python,Socket</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python定时任务利器—Apscheduler</title>
+    <url>/2020/12/07/Python%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%88%A9%E5%99%A8%E2%80%94Apscheduler/</url>
+    <content><![CDATA[<h2 id="导语"><a href="#导语" class="headerlink" title="导语"></a>导语</h2><p>在工作场景遇到了这么一个场景，就是需要定期去执行一个缓存接口，用于同步设备配置。首先想到的就是Linux上的crontab，可以定期，或者间隔一段时间去执行任务。但是如果你想要把这个定时任务作为一个模块集成到Python项目中，或者想持久化任务，显然crontab不太适用。Python的APScheduler模块能够很好的解决此类问题，所以专门写这篇文章，从简单入门开始记录关于APScheduler最基础的使用场景，以及解决持久化任务的问题，最后结合其他框架深层次定制定时任务模块这几个点入手。</p>
+<h2 id="简单介绍"><a href="#简单介绍" class="headerlink" title="简单介绍"></a>简单介绍</h2><p>先简单介绍一下Apscheduler模块包含的四种组件：</p>
+<ul>
+<li>Trigger触发器</li>
+<li>Job作业</li>
+<li>Excutor执行器</li>
+<li>Scheduler调度器</li>
+</ul>
+<p>大概了解了Apscheduler包含的几种概念，现在先来看一下一个简单的示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> apscheduler.schedulers.blocking <span class="keyword">import</span> BlockingScheduler</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>():</span><br><span class="line">    <span class="built_in">print</span>(time.strftime(<span class="string">&quot;%c&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    scheduler = BlockingScheduler()</span><br><span class="line">    scheduler.add_job(hello, <span class="string">&#x27;interval&#x27;</span>, seconds=<span class="number">5</span>)</span><br><span class="line">    scheduler.start()</span><br></pre></td></tr></table></figure>
+<p>示例的输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Thu Dec  3 16:01:20 2020</span><br><span class="line">Thu Dec  3 16:01:25 2020</span><br><span class="line">Thu Dec  3 16:01:30 2020</span><br><span class="line">Thu Dec  3 16:01:35 2020</span><br><span class="line">Thu Dec  3 16:01:40 2020</span><br><span class="line">..........</span><br></pre></td></tr></table></figure>
+<p>这个简单的示例，我们用上面提到几种组件分析一下运行逻辑：</p>
+<ul>
+<li>首先是Scheduler调度器，这个示例使用的BlockingScheduler调度器，在官方文档中的解释是，BlockingScheduler适合当你的这个定时任务程序是唯一运行的程序；换言之，则是BlockingScheduler调度器是一个阻塞调度器，当程序运行这种调度器，进程则会阻塞，无法执行其他操作；</li>
+<li>其次是Job作业和触发器，这两个放在一起讲是因为，在定义作业的时候，你就需要选择一个触发器，这里选择的是interval触发器，这种触发器会以固定时间间隔运行作业。换言之，为调度器添加一个hello的工作，并以每5秒的时间间隔执行任务。</li>
+<li>最后就是执行器，默认是ThreadPoolExcutor执行器，他们将任务中可调用对象交给线程池执行操作，等完成操作后，执行器会通知调度程序。</li>
+</ul>
+<p>内置的三种Trigger触发器类型：</p>
+<ul>
+<li>date:特定时间仅运行一次作业</li>
+<li>interval: 固定的时间间隔内运行一次作业</li>
+<li>cron: 在一天内特定的时间定期运行作业</li>
+</ul>
+<p>常见的Scheduler调度器:</p>
+<ul>
+<li>BlockingScheduler: 调度程序是流程中唯一运行的东西</li>
+<li>BackgroundScheduler: 调度程序在应用程序内部的后台运行时使用</li>
+<li>AsyncIOScheduler: 应用程序使用asyncio模块</li>
+<li>GeventScheduler: 应用程序使用gevent模块</li>
+<li>TornadoScheduler：构建Tornado应用程序时使用</li>
+<li>TwistedScheduler: 构建Tornado应用程序时使用</li>
+<li>QtScheduler: 在构建QT应用程序时使用</li>
+</ul>
+<p>常见的JobStore：</p>
+<ul>
+<li>MemoryJobStore</li>
+<li>MongoDBJobStore</li>
+<li>SQLAlchemyJobStore</li>
+<li>RedisJobStore</li>
+</ul>
+<h2 id="进阶使用"><a href="#进阶使用" class="headerlink" title="进阶使用"></a>进阶使用</h2><p>通过上面一个简单的示例了解大概的工作流程，以及各个组件在整个流程中的作用，以下的示例是Flask Web框架结合使用Apscheduler定时器，定时执行任务。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask, Blueprint, request</span><br><span class="line"><span class="keyword">from</span> apscheduler.executors.pool <span class="keyword">import</span> ThreadPoolExecutor </span><br><span class="line"><span class="keyword">from</span> apscheduler.schedulers.background <span class="keyword">import</span> BackgroundScheduler</span><br><span class="line"><span class="keyword">from</span> apscheduler.jobstores.redis <span class="keyword">import</span> RedisJobStore</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line">executors = &#123;<span class="string">&quot;default&quot;</span>: ThreadPoolExecutor(<span class="number">5</span>)&#125;</span><br><span class="line">default_redis_jobstore = RedisJobStore(db=<span class="number">2</span>, </span><br><span class="line">        jobs_key=<span class="string">&quot;apschedulers.default_jobs&quot;</span>,</span><br><span class="line">        run_times_key=<span class="string">&quot;apschedulers.default_run_times&quot;</span>,</span><br><span class="line">        host = <span class="string">&#x27;127.0.0.1&#x27;</span>,</span><br><span class="line">        port = <span class="number">6379</span></span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">scheduler = BackgroundScheduler(executors=executors)</span><br><span class="line">scheduler.add_jobstore(default_redis_jobstore)</span><br><span class="line">scheduler.start()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">say_hello</span>():</span><br><span class="line">    <span class="built_in">print</span>(time.strftime(<span class="string">&quot;%c&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/get_job&quot;</span>, methods=[<span class="string">&#x27;GET&#x27;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_job</span>():</span><br><span class="line">    <span class="keyword">if</span> scheduler.get_job(<span class="string">&quot;say_hello_test&quot;</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;YES&quot;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;NO&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/start_job&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">start_job</span>():</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> scheduler.get_job(<span class="string">&quot;say_hello_test&quot;</span>):</span><br><span class="line">        scheduler.add_job(say_hello, <span class="string">&quot;interval&quot;</span>, seconds=<span class="number">5</span>, <span class="built_in">id</span>=<span class="string">&quot;say_hello_test&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Start Scuessfully!&quot;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Started Failed&quot;</span></span><br><span class="line">   </span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/remove_job&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">remove_job</span>():</span><br><span class="line">    <span class="keyword">if</span> scheduler.get_job(<span class="string">&quot;say_hello_test&quot;</span>):</span><br><span class="line">        scheduler.remove_job(<span class="string">&quot;say_hello_test&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Delete Successfully!&quot;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Delete Failed&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    app.run(host=<span class="string">&quot;127.0.0.1&quot;</span>, port=<span class="number">8787</span>, debug=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>先分析Jobstore，这里使用的是RedisJobstore，将任务序列化存入到Redis数据库中。这里顺便提一下，为什么需要设置作业存储器，原因是当调度器程序崩溃时，仍然能够保留作业，当然选择什么作业存储器，可以根据具体的工作场景，目前主流的mysql，mongodb，redis，SQLite基本都支持;</li>
+<li>然后再看看Scheduler，这里使用的时BackgroundScheduler，因为这里要求调度程序不能阻塞flask程序的正常接收请求，所以选在BackgrounScheduler让它在开始执行任务时是在后台运行的，不会阻塞主线程;</li>
+<li>最后看看工作的逻辑，这里get_job获取作业的状态，查看作业是否存在，start_job则是先判断作业是否启动，然后再决定启动操作，remove_job则是停止作业。而这里的作业定义则是通过interval触发器，每五秒执行一次say_hello任务；</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>最后总结一下，首先你要设置一个作业存储器用于在调度程序崩溃重新恢复时，还能够在作业存储器中获取到作业继续执行；然后你需要设置一个执行器，这个根据作业的类型，比如时一个CPU密集型的任务，那就可以用进程池执行器，默认是用线程池执行器；最后创建配置调度器，启动调度，可以在启动前添加作业，也可以在启动后添加，删除，获取作业。(在这里需要明白的一点就是应用程序不会直接去操作作业存储器，作业或者执行器，而是调度器提供适当的接口来处理这些接口。)<br><br/>ApScheduler是一个不错的定时任务库，能够动态的添加删除，同时也支持不同的触发器类型，这也是它的优势，相反一些如果是静态任务，其实可以用如linux的crontab工具去做定时任务。有关这方面的记录还会持续更新，如果有什么问题，可以提出来，大家一起探讨。</p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python | Apscheduler</tag>
       </tags>
   </entry>
   <entry>
@@ -342,6 +284,64 @@
       </categories>
       <tags>
         <tag>Python | Web开发 | 项目部署</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python命令行模块（sys.argv,argparse,click）</title>
+    <url>/2020/09/12/Python%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%A8%A1%E5%9D%97%EF%BC%88sys.argv,argparse,click%EF%BC%89/</url>
+    <content><![CDATA[<blockquote>
+<p>Python作为一门脚本语言，经常作为脚本接受命令行传入参数，Python接受命令行参数大概有三种方式。因为在日常工作场景会经常使用到，这里对这几种方式进行总结。</p>
+</blockquote>
+<h2 id="命令行参数模块"><a href="#命令行参数模块" class="headerlink" title="命令行参数模块"></a>命令行参数模块</h2><p>这里命令行参数模块平时工作中用到最多就是这三种模块：sys.argv,argparse,click。sys.argv和argparse都是内置模块，click则是第三方模块。</p>
+<h3 id="sys-argv模块（内置模块）"><a href="#sys-argv模块（内置模块）" class="headerlink" title="sys.argv模块（内置模块）"></a>sys.argv模块（内置模块）</h3><p>先看一个简单的示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    file_name = sys.argv[<span class="number">0</span>]</span><br><span class="line">    name =  sys.argv[<span class="number">1</span>]</span><br><span class="line">    age = sys.argv[<span class="number">2</span>]</span><br><span class="line">    sex = sys.argv[<span class="number">3</span>]</span><br><span class="line">    other = sys.argv[<span class="number">4</span>:]</span><br><span class="line">    hello(name, age, sex, *other)</span><br></pre></td></tr></table></figure>
+<p>调用脚本：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13 man nibi ss</span><br></pre></td></tr></table></figure>
+<p>脚本输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line">nibi</span><br><span class="line">ss</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>sys.argv模块不难理解，命令参数作为列表传入Python脚本中，argv[0]是脚本的名字，argv[1]则是第一个参数，后面以此类推。所以在脚本中只需要提取列表中的参数即可使用。上面演示的是正确调用Python脚本的情况，下面则是调用失败的情况。</p>
+</blockquote>
+<p>错误调用脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13</span><br></pre></td></tr></table></figure>
+<p>错误输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;test_sysargv.py&quot;, line 16, in &lt;module&gt;</span><br><span class="line">    sex = sys.argv[3]</span><br><span class="line">IndexError: list index out of range</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>关于错误也很好理解，经典的列表索引超出范围，之所列表索引超出范围，没有传入足够的参数。当然你可以使用try…except捕获错误。但是这种做法太过死板，因为在命令行中必须按照脚本规定的参数顺序输入参数，所以这种模块使用一般是针对一些需要的参数比较少并且固定的脚本。</p>
+</blockquote>
+<h3 id="argparse模块（内置模块）"><a href="#argparse模块（内置模块）" class="headerlink" title="argparse模块（内置模块）"></a>argparse模块（内置模块）</h3><p>同样的先看一个简单的示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"></span><br><span class="line">parser = argparse.ArgumentParser(description=<span class="string">&#x27;Test for argparse module.&#x27;</span>)   <span class="comment"># 构建命令参数实例</span></span><br><span class="line">parser.add_argument(<span class="string">&quot;--name&quot;</span>, <span class="string">&quot;-n&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--age&quot;</span>, <span class="string">&quot;-a&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--sex&quot;</span>, <span class="string">&quot;-s&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--type&quot;</span>, <span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 非必要属性&quot;</span>, required=<span class="literal">True</span>)</span><br><span class="line">args = parser.parse_args()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=args.<span class="built_in">type</span>))</span><br><span class="line">    <span class="keyword">if</span> args.name <span class="keyword">and</span> args.age <span class="keyword">and</span> args.sex:</span><br><span class="line">        hello(args.name, args.age, args.sex)</span><br></pre></td></tr></table></figure>
+<p>执行脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -t json -n zhangsan -a 13 -s man</span><br></pre></td></tr></table></figure>
+<p>脚本成功输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: json</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>关于argparse模块的使用，首先需要生成一个命令行参数的实例，然后通过对这个对象添加属性，添加需要从命令行获取的参数，包括哪些是必要参数（required&#x3D;True），哪些非必要参数，同时也可以对每个参数进行帮助提示（help&#x3D;””）。</p>
+</blockquote>
+<blockquote>
+<p>而上面示例中分别添加了四个属性，–name和-n同时可以再命令行中使用，都表示了参数name。ArgumentParser通过parse_ags()方法解析参数，检查命令行，将每个参数转换为适当的类型，所以在脚本中同时也可以使用args.n和args.name获取到参数，相对应的如果没有传入该参数，脚本中则获取到None。</p>
+</blockquote>
+<p>查看命令行参数之后脚本的帮助提示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -h</span><br><span class="line">usage: test_argparse.py [-h] [--name NAME] [--age AGE] [--sex SEX] --type TYPE</span><br><span class="line"></span><br><span class="line">Test for argparse module.</span><br><span class="line"></span><br><span class="line">optional arguments:</span><br><span class="line">  -h, --help            show this help message and exit</span><br><span class="line">  --name NAME, -n NAME  name attribute: 非必要属性</span><br><span class="line">  --age AGE, -a AGE     age attribute: 非必要属性</span><br><span class="line">  --sex SEX, -s SEX     sex attribute: 非必要属性</span><br><span class="line">  --type TYPE, -t TYPE  type attribute: 非必要属性</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>另外在添加命令行参数的属性中，还有更多的设置，多余的可以参考Python官方文档，里面都有详细的标注，这里就不展开来讲，总结的就是关于argparse模块的使用非常简便，同时十分人性化，也很符合日常工作的需要。</p>
+</blockquote>
+<h3 id="click模块"><a href="#click模块" class="headerlink" title="click模块"></a>click模块</h3><p>先开一个简单的使用示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> click</span><br><span class="line"></span><br><span class="line"><span class="meta">@click.command()</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--name&quot;</span>, default=<span class="string">&quot;zhangsan&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--age&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--sex&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 必要属性&quot;</span>, required=<span class="literal">True</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">t, name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=t))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    hello()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>执行脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_click.py -t 1 --age 13 --sex man</span><br></pre></td></tr></table></figure>
+<p>脚本输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: 1</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>click模块是Flask团队优秀的开源项目，使用方法和argparse模块很相似，同样为命令行封装了大量的方法，使用者只需要专注代码功能的实现。<br> click模块和argparse模块不同的地方就是，click模块使用装饰器的方式给函数添加命令行属性，关于装饰器简单来讲就是能够在不修改原有函数的基础上添加功能。虽然使用装饰器但是添加命令行属性的方式和argparse模块很相似，包括options中常用的参数含义也有很多类似的地方。值得注意的就是一开始需要通过command()将函数成为命令行的接口。<br> 关于的click模块的就大致讲到这里，其余有兴趣的可以再去了解一下。</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>关于这三个模块值得注意的是，尽量贴近自己应用场景去选择，真正的做到自己能够方便使用才是你去使用这些模块的原因。</p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python | Argv | argparse | cli</tag>
       </tags>
   </entry>
 </search>
