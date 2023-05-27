@@ -97,64 +97,37 @@
       </tags>
   </entry>
   <entry>
-    <title>Python命令行模块（sys.argv,argparse,click）</title>
-    <url>/2020/09/12/Python%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%A8%A1%E5%9D%97%EF%BC%88sys.argv,argparse,click%EF%BC%89/</url>
-    <content><![CDATA[<blockquote>
-<p>Python作为一门脚本语言，经常作为脚本接受命令行传入参数，Python接受命令行参数大概有三种方式。因为在日常工作场景会经常使用到，这里对这几种方式进行总结。</p>
+    <title>总结技术文章写作技巧</title>
+    <url>/2020/07/30/%E6%80%BB%E7%BB%93%E6%8A%80%E6%9C%AF%E6%96%87%E7%AB%A0%E5%86%99%E4%BD%9C%E6%8A%80%E5%B7%A7/</url>
+    <content><![CDATA[<h2 id="1、端正心态"><a href="#1、端正心态" class="headerlink" title="1、端正心态"></a>1、端正心态</h2><p>&amp;nbsp; 对于写作不要产生恐惧，起点期望放低点，没有什么事情能一蹴而就，同时可以通过阅读其他的技术文章，模仿行文方式，不断重复练习，对比吸取相关长处，补足自己的缺点。</p>
+<h2 id="2、明确定位"><a href="#2、明确定位" class="headerlink" title="2、明确定位"></a>2、明确定位</h2><p>&amp;nbsp;对于这篇文章需要给什么类型的读者看，需要怎样的技术背景，需要怎样的技术栈，以及相关的项目背景。明确了定位方便切入不同读者的阅读需求。</p>
+<h2 id="3、标题切入"><a href="#3、标题切入" class="headerlink" title="3、标题切入"></a>3、标题切入</h2><p>&amp;nbsp; 对于文章的标题需要提供给读者一个很好的切入角度，整篇文章围绕着标题，起到文章的中心作用。</p>
+<h2 id="4、简介与大纲"><a href="#4、简介与大纲" class="headerlink" title="4、简介与大纲"></a>4、简介与大纲</h2><p>&amp;nbsp;  针对不同的文章，如果对于一些小项目经验或者工具使用的分享，列提纲和简介能够给读者一目了然，在第一时间的情况下获取到需要的知识信息，简介中我一般喜欢写背景，即项目背景，或者技术背景，通过这些背景能够很好的把读者带到一个阅读环境。提纲的话就因人而异，如果仅仅是比较小型的分享，对于列提纲显得没那么重要。<br>&amp;nbsp;  而针对大型的技术的分享，对于一些写到比较全的技术分享，就需要通过列提纲对自己的内容进行很好的归纳总结成每个点，同时提纲好处就是能够让读者随时从某个地方切入，省去一些自己知道的环节。</p>
+<h2 id="5、正文写作"><a href="#5、正文写作" class="headerlink" title="5、正文写作"></a>5、正文写作</h2><p>&amp;nbsp; 通过提问和问答模式：能够让读者目的明确地进行阅读，同时让读者带着问题去阅读，就能更好的抓住文章的重点和逻辑，同时读者的阅读效果和阅读感受就会更加好。<br>&amp;nbsp; 通过讲故事的方法：讲故事的话，一般是可以设定某个情节，让读者代入到该场景，通过叙事的模式和节奏，让读者更加容易接受专业知识。</p>
+<h2 id="6、额外"><a href="#6、额外" class="headerlink" title="6、额外"></a>6、额外</h2><ul>
+<li>通过合适的段落和句子，减轻读者阅读的压力；</li>
+<li>对于需要结合代码讲清楚专业知识，则需要将代码贴出来，并且在一些关键的代码中需要有清晰的注释；</li>
+<li>对于文章出现的Demo可以附加上demo的链接；</li>
+<li>如果对于一些比较专业的术语或者细节，可以通过类比形式解释清楚问题，如果文字描述不清楚可以选择配图的方式；</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ul>
+<li>取好标题，醒目突出中心</li>
+<li>图文并茂，适当配图说明</li>
+<li>篇幅适宜，不宜过短也避免冗长</li>
+<li>格式统一，基本排版规则需要遵守</li>
+<li>细节处理，错别字标点处理正确。</li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><blockquote>
+<p>参考文章：<a class="link"   href="http://news.51cto.com/art/201904/594736.htm" >http://news.51cto.com/art/201904/594736.htm<i class="fas fa-external-link-alt"></i></a></p>
 </blockquote>
-<h2 id="命令行参数模块"><a href="#命令行参数模块" class="headerlink" title="命令行参数模块"></a>命令行参数模块</h2><p>这里命令行参数模块平时工作中用到最多就是这三种模块：sys.argv,argparse,click。sys.argv和argparse都是内置模块，click则是第三方模块。</p>
-<h3 id="sys-argv模块（内置模块）"><a href="#sys-argv模块（内置模块）" class="headerlink" title="sys.argv模块（内置模块）"></a>sys.argv模块（内置模块）</h3><p>先看一个简单的示例：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    file_name = sys.argv[<span class="number">0</span>]</span><br><span class="line">    name =  sys.argv[<span class="number">1</span>]</span><br><span class="line">    age = sys.argv[<span class="number">2</span>]</span><br><span class="line">    sex = sys.argv[<span class="number">3</span>]</span><br><span class="line">    other = sys.argv[<span class="number">4</span>:]</span><br><span class="line">    hello(name, age, sex, *other)</span><br></pre></td></tr></table></figure>
-<p>调用脚本：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13 man nibi ss</span><br></pre></td></tr></table></figure>
-<p>脚本输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line">nibi</span><br><span class="line">ss</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>sys.argv模块不难理解，命令参数作为列表传入Python脚本中，argv[0]是脚本的名字，argv[1]则是第一个参数，后面以此类推。所以在脚本中只需要提取列表中的参数即可使用。上面演示的是正确调用Python脚本的情况，下面则是调用失败的情况。</p>
-</blockquote>
-<p>错误调用脚本：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13</span><br></pre></td></tr></table></figure>
-<p>错误输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;test_sysargv.py&quot;, line 16, in &lt;module&gt;</span><br><span class="line">    sex = sys.argv[3]</span><br><span class="line">IndexError: list index out of range</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>关于错误也很好理解，经典的列表索引超出范围，之所列表索引超出范围，没有传入足够的参数。当然你可以使用try…except捕获错误。但是这种做法太过死板，因为在命令行中必须按照脚本规定的参数顺序输入参数，所以这种模块使用一般是针对一些需要的参数比较少并且固定的脚本。</p>
-</blockquote>
-<h3 id="argparse模块（内置模块）"><a href="#argparse模块（内置模块）" class="headerlink" title="argparse模块（内置模块）"></a>argparse模块（内置模块）</h3><p>同样的先看一个简单的示例：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"></span><br><span class="line">parser = argparse.ArgumentParser(description=<span class="string">&#x27;Test for argparse module.&#x27;</span>)   <span class="comment"># 构建命令参数实例</span></span><br><span class="line">parser.add_argument(<span class="string">&quot;--name&quot;</span>, <span class="string">&quot;-n&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--age&quot;</span>, <span class="string">&quot;-a&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--sex&quot;</span>, <span class="string">&quot;-s&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--type&quot;</span>, <span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 非必要属性&quot;</span>, required=<span class="literal">True</span>)</span><br><span class="line">args = parser.parse_args()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=args.<span class="built_in">type</span>))</span><br><span class="line">    <span class="keyword">if</span> args.name <span class="keyword">and</span> args.age <span class="keyword">and</span> args.sex:</span><br><span class="line">        hello(args.name, args.age, args.sex)</span><br></pre></td></tr></table></figure>
-<p>执行脚本：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -t json -n zhangsan -a 13 -s man</span><br></pre></td></tr></table></figure>
-<p>脚本成功输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: json</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>关于argparse模块的使用，首先需要生成一个命令行参数的实例，然后通过对这个对象添加属性，添加需要从命令行获取的参数，包括哪些是必要参数（required&#x3D;True），哪些非必要参数，同时也可以对每个参数进行帮助提示（help&#x3D;””）。</p>
-</blockquote>
-<blockquote>
-<p>而上面示例中分别添加了四个属性，–name和-n同时可以再命令行中使用，都表示了参数name。ArgumentParser通过parse_ags()方法解析参数，检查命令行，将每个参数转换为适当的类型，所以在脚本中同时也可以使用args.n和args.name获取到参数，相对应的如果没有传入该参数，脚本中则获取到None。</p>
-</blockquote>
-<p>查看命令行参数之后脚本的帮助提示：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -h</span><br><span class="line">usage: test_argparse.py [-h] [--name NAME] [--age AGE] [--sex SEX] --type TYPE</span><br><span class="line"></span><br><span class="line">Test for argparse module.</span><br><span class="line"></span><br><span class="line">optional arguments:</span><br><span class="line">  -h, --help            show this help message and exit</span><br><span class="line">  --name NAME, -n NAME  name attribute: 非必要属性</span><br><span class="line">  --age AGE, -a AGE     age attribute: 非必要属性</span><br><span class="line">  --sex SEX, -s SEX     sex attribute: 非必要属性</span><br><span class="line">  --type TYPE, -t TYPE  type attribute: 非必要属性</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>另外在添加命令行参数的属性中，还有更多的设置，多余的可以参考Python官方文档，里面都有详细的标注，这里就不展开来讲，总结的就是关于argparse模块的使用非常简便，同时十分人性化，也很符合日常工作的需要。</p>
-</blockquote>
-<h3 id="click模块"><a href="#click模块" class="headerlink" title="click模块"></a>click模块</h3><p>先开一个简单的使用示例：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> click</span><br><span class="line"></span><br><span class="line"><span class="meta">@click.command()</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--name&quot;</span>, default=<span class="string">&quot;zhangsan&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--age&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--sex&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 必要属性&quot;</span>, required=<span class="literal">True</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">t, name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=t))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    hello()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>执行脚本：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_click.py -t 1 --age 13 --sex man</span><br></pre></td></tr></table></figure>
-<p>脚本输出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: 1</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>click模块是Flask团队优秀的开源项目，使用方法和argparse模块很相似，同样为命令行封装了大量的方法，使用者只需要专注代码功能的实现。<br> click模块和argparse模块不同的地方就是，click模块使用装饰器的方式给函数添加命令行属性，关于装饰器简单来讲就是能够在不修改原有函数的基础上添加功能。虽然使用装饰器但是添加命令行属性的方式和argparse模块很相似，包括options中常用的参数含义也有很多类似的地方。值得注意的就是一开始需要通过command()将函数成为命令行的接口。<br> 关于的click模块的就大致讲到这里，其余有兴趣的可以再去了解一下。</p>
-</blockquote>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>关于这三个模块值得注意的是，尽量贴近自己应用场景去选择，真正的做到自己能够方便使用才是你去使用这些模块的原因。</p>
 ]]></content>
       <categories>
-        <category>Python</category>
+        <category>笔记</category>
       </categories>
       <tags>
-        <tag>Python</tag>
-        <tag>Argv</tag>
-        <tag>argparse</tag>
-        <tag>cli</tag>
+        <tag>笔记</tag>
+        <tag>写作</tag>
+        <tag>技术文章</tag>
       </tags>
   </entry>
   <entry>
@@ -219,29 +192,14 @@
       </tags>
   </entry>
   <entry>
-    <title>总结技术文章写作技巧</title>
-    <url>/2020/07/30/%E6%80%BB%E7%BB%93%E6%8A%80%E6%9C%AF%E6%96%87%E7%AB%A0%E5%86%99%E4%BD%9C%E6%8A%80%E5%B7%A7/</url>
-    <content><![CDATA[<h2 id="1、端正心态"><a href="#1、端正心态" class="headerlink" title="1、端正心态"></a>1、端正心态</h2><p>&amp;nbsp; 对于写作不要产生恐惧，起点期望放低点，没有什么事情能一蹴而就，同时可以通过阅读其他的技术文章，模仿行文方式，不断重复练习，对比吸取相关长处，补足自己的缺点。</p>
-<h2 id="2、明确定位"><a href="#2、明确定位" class="headerlink" title="2、明确定位"></a>2、明确定位</h2><p>&amp;nbsp;对于这篇文章需要给什么类型的读者看，需要怎样的技术背景，需要怎样的技术栈，以及相关的项目背景。明确了定位方便切入不同读者的阅读需求。</p>
-<h2 id="3、标题切入"><a href="#3、标题切入" class="headerlink" title="3、标题切入"></a>3、标题切入</h2><p>&amp;nbsp; 对于文章的标题需要提供给读者一个很好的切入角度，整篇文章围绕着标题，起到文章的中心作用。</p>
-<h2 id="4、简介与大纲"><a href="#4、简介与大纲" class="headerlink" title="4、简介与大纲"></a>4、简介与大纲</h2><p>&amp;nbsp;  针对不同的文章，如果对于一些小项目经验或者工具使用的分享，列提纲和简介能够给读者一目了然，在第一时间的情况下获取到需要的知识信息，简介中我一般喜欢写背景，即项目背景，或者技术背景，通过这些背景能够很好的把读者带到一个阅读环境。提纲的话就因人而异，如果仅仅是比较小型的分享，对于列提纲显得没那么重要。<br>&amp;nbsp;  而针对大型的技术的分享，对于一些写到比较全的技术分享，就需要通过列提纲对自己的内容进行很好的归纳总结成每个点，同时提纲好处就是能够让读者随时从某个地方切入，省去一些自己知道的环节。</p>
-<h2 id="5、正文写作"><a href="#5、正文写作" class="headerlink" title="5、正文写作"></a>5、正文写作</h2><p>&amp;nbsp; 通过提问和问答模式：能够让读者目的明确地进行阅读，同时让读者带着问题去阅读，就能更好的抓住文章的重点和逻辑，同时读者的阅读效果和阅读感受就会更加好。<br>&amp;nbsp; 通过讲故事的方法：讲故事的话，一般是可以设定某个情节，让读者代入到该场景，通过叙事的模式和节奏，让读者更加容易接受专业知识。</p>
-<h2 id="6、额外"><a href="#6、额外" class="headerlink" title="6、额外"></a>6、额外</h2><ul>
-<li>通过合适的段落和句子，减轻读者阅读的压力；</li>
-<li>对于需要结合代码讲清楚专业知识，则需要将代码贴出来，并且在一些关键的代码中需要有清晰的注释；</li>
-<li>对于文章出现的Demo可以附加上demo的链接；</li>
-<li>如果对于一些比较专业的术语或者细节，可以通过类比形式解释清楚问题，如果文字描述不清楚可以选择配图的方式；</li>
-</ul>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ul>
-<li>取好标题，醒目突出中心</li>
-<li>图文并茂，适当配图说明</li>
-<li>篇幅适宜，不宜过短也避免冗长</li>
-<li>格式统一，基本排版规则需要遵守</li>
-<li>细节处理，错别字标点处理正确。</li>
-</ul>
-<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><blockquote>
-<p>参考文章：<a class="link"   href="http://news.51cto.com/art/201904/594736.htm" >http://news.51cto.com/art/201904/594736.htm<i class="fas fa-external-link-alt"></i></a></p>
+    <title>明朝那些事儿</title>
+    <url>/2020/07/30/%E6%98%8E%E6%9C%9D%E9%82%A3%E4%BA%9B%E4%BA%8B/</url>
+    <content><![CDATA[<blockquote>
+<p>关于这个系列的丛书，掰掰手指头估计读了有三次遍了，都是在人生不同的阶段去阅读，或者懵懂，或者无聊，或者失意，每次隔段时间再次捧起这些书的时候，心中各种人物仿佛唤醒你脑中最深处的回忆。唤起那份第一次阅读时带来的惊喜，各种人物形形色色也顿时鲜明起来。<br>其实每每一口气读完整套书籍，胸中总有种不吐不快的感觉，就像如鲠在喉，慢慢顺着明朝建立起来时候缓缓地回忆那时候地一切，顿时起了一身的“鸡皮疙瘩”，历史总是默默无语，总是安静的看着这一切事情的发生，大浪淘进了无数的英雄豪杰，他们的归宿总是惊人的相似，之所以我想些这篇文章，真的是有感于里面的许多人物给我带来不同的感受，他们或狡诈，或阴险，或偏执、或聪明、或愚蠢、或可爱、或勇敢、或自负等等等，我只是想把我已经看完的书，看完的一段历史，重新在我的视角里 ，说说自己的看法。</p>
 </blockquote>
+<h2 id="朱元璋"><a href="#朱元璋" class="headerlink" title="朱元璋"></a>朱元璋</h2><p>要说自己最开始知道明朝有关的历史，第一个毋庸置疑的是明朝的开国皇帝朱元璋，对于我来说，在没了解这段历史时，单纯的感觉认为这是一个很”励志“的人，为什么呢？因为他出生卑微，却靠着自己独有的战略眼光以及用人智慧，一步步走向属于他的巅峰。属实”励志“，但当我对这位人物有了一定的历史了解之后，我又开始发觉这是一个极其复杂的人。比如经常有人说他天生英雄，其实他是实在走投无路，被人告密之后，还让自己朋友周德兴占了一卦，才觉得跟着造反的。造反的过程中刚开始也十分不顺利，但是你在过程中慢慢的就会发现到朱元璋的过人之处，过人的胸怀，对自己的战略眼光视角的自信，对事物本质的洞悉能力。<br>在他打败陈友谅、张士诚的时候，都能为他每次出色战略决定感慨，当然这些也少不了他手下那些骁勇善战的将士，以及足智多谋的谋士。在推翻元朝统治，建立大明之后，慢慢随着岁月的逝去，越来越多的老朋友离开了朱元璋的身边，这里面有很多都是为了自己后代能够统治安稳而解决掉。当他的马皇后最终离开了他的身边之后，他或许真的流泪了，那个在他坎坷流离的生命岁月中一直不放弃不抛弃的跟着他的女人走了，渐渐的也只剩给他一个人了。</p>
+<h2 id="朱棣"><a href="#朱棣" class="headerlink" title="朱棣"></a>朱棣</h2><p>朱棣可能是我在明朝中印象最深刻的一个皇帝，为什么呢？因为他可以说是一个双面皇帝，对自己敌人不择手段，宁杀错不放过，对自己的朋友，百姓都是关怀备至，一副仁君的模样。然后他本身就在军队中长大，练就了一身的指挥打仗的本领，在实战中也是经常出奇制胜。在最开始的时候，朱棣也是不太像造反的，毕竟这种一旦失败就要人头落地的买卖实在不划算，而身边的和尚姚广孝一直在劝说他造反，最后因为朱允炆听从黄子澄、齐泰的建议削藩，最终导致朱棣起兵造反。而让我铭记朱棣的名字，是因为朱棣一手建立了永乐盛世，万邦来朝的繁华景象。这背后是他数次北伐亲征，兢兢业业。以及派遣郑和下西洋传播和平理想的信念。他不是一个好人，但是一个好皇帝。</p>
+<h2 id="未完。。。"><a href="#未完。。。" class="headerlink" title="未完。。。"></a>未完。。。</h2><p>可能因为胸中的那团气突然散了，感觉有许多东西其实没有讲出来，但是仿佛这其中犹如一团乱麻，始终牵绕着我。朱元璋，李善忠，刘伯温，徐达，常遇春，汤和，马皇后，朱棣，朱允炆，黄子澄，齐泰，方孝孺，姚广孝，郑和，朱高煦，朱瞻基，杨士奇，杨荣，杨溥，于谦，朱祁镇…..，这些人仿佛是历史长河中一粒粒沙子，他们任何一个人只是历史选中的角色，但是任何一个却无法阻挡历史的脚步。</p>
 ]]></content>
       <categories>
         <category>笔记</category>
@@ -249,7 +207,7 @@
       <tags>
         <tag>笔记</tag>
         <tag>写作</tag>
-        <tag>技术文章</tag>
+        <tag>历史</tag>
       </tags>
   </entry>
   <entry>
@@ -351,6 +309,67 @@
         <tag>Python</tag>
         <tag>Web开发</tag>
         <tag>项目部署</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python命令行模块（sys.argv,argparse,click）</title>
+    <url>/2020/09/12/Python%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%A8%A1%E5%9D%97%EF%BC%88sys.argv,argparse,click%EF%BC%89/</url>
+    <content><![CDATA[<blockquote>
+<p>Python作为一门脚本语言，经常作为脚本接受命令行传入参数，Python接受命令行参数大概有三种方式。因为在日常工作场景会经常使用到，这里对这几种方式进行总结。</p>
+</blockquote>
+<h2 id="命令行参数模块"><a href="#命令行参数模块" class="headerlink" title="命令行参数模块"></a>命令行参数模块</h2><p>这里命令行参数模块平时工作中用到最多就是这三种模块：sys.argv,argparse,click。sys.argv和argparse都是内置模块，click则是第三方模块。</p>
+<h3 id="sys-argv模块（内置模块）"><a href="#sys-argv模块（内置模块）" class="headerlink" title="sys.argv模块（内置模块）"></a>sys.argv模块（内置模块）</h3><p>先看一个简单的示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    file_name = sys.argv[<span class="number">0</span>]</span><br><span class="line">    name =  sys.argv[<span class="number">1</span>]</span><br><span class="line">    age = sys.argv[<span class="number">2</span>]</span><br><span class="line">    sex = sys.argv[<span class="number">3</span>]</span><br><span class="line">    other = sys.argv[<span class="number">4</span>:]</span><br><span class="line">    hello(name, age, sex, *other)</span><br></pre></td></tr></table></figure>
+<p>调用脚本：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13 man nibi ss</span><br></pre></td></tr></table></figure>
+<p>脚本输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line">nibi</span><br><span class="line">ss</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>sys.argv模块不难理解，命令参数作为列表传入Python脚本中，argv[0]是脚本的名字，argv[1]则是第一个参数，后面以此类推。所以在脚本中只需要提取列表中的参数即可使用。上面演示的是正确调用Python脚本的情况，下面则是调用失败的情况。</p>
+</blockquote>
+<p>错误调用脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13</span><br></pre></td></tr></table></figure>
+<p>错误输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;test_sysargv.py&quot;, line 16, in &lt;module&gt;</span><br><span class="line">    sex = sys.argv[3]</span><br><span class="line">IndexError: list index out of range</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>关于错误也很好理解，经典的列表索引超出范围，之所列表索引超出范围，没有传入足够的参数。当然你可以使用try…except捕获错误。但是这种做法太过死板，因为在命令行中必须按照脚本规定的参数顺序输入参数，所以这种模块使用一般是针对一些需要的参数比较少并且固定的脚本。</p>
+</blockquote>
+<h3 id="argparse模块（内置模块）"><a href="#argparse模块（内置模块）" class="headerlink" title="argparse模块（内置模块）"></a>argparse模块（内置模块）</h3><p>同样的先看一个简单的示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"></span><br><span class="line">parser = argparse.ArgumentParser(description=<span class="string">&#x27;Test for argparse module.&#x27;</span>)   <span class="comment"># 构建命令参数实例</span></span><br><span class="line">parser.add_argument(<span class="string">&quot;--name&quot;</span>, <span class="string">&quot;-n&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--age&quot;</span>, <span class="string">&quot;-a&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--sex&quot;</span>, <span class="string">&quot;-s&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--type&quot;</span>, <span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 非必要属性&quot;</span>, required=<span class="literal">True</span>)</span><br><span class="line">args = parser.parse_args()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=args.<span class="built_in">type</span>))</span><br><span class="line">    <span class="keyword">if</span> args.name <span class="keyword">and</span> args.age <span class="keyword">and</span> args.sex:</span><br><span class="line">        hello(args.name, args.age, args.sex)</span><br></pre></td></tr></table></figure>
+<p>执行脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -t json -n zhangsan -a 13 -s man</span><br></pre></td></tr></table></figure>
+<p>脚本成功输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: json</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>关于argparse模块的使用，首先需要生成一个命令行参数的实例，然后通过对这个对象添加属性，添加需要从命令行获取的参数，包括哪些是必要参数（required&#x3D;True），哪些非必要参数，同时也可以对每个参数进行帮助提示（help&#x3D;””）。</p>
+</blockquote>
+<blockquote>
+<p>而上面示例中分别添加了四个属性，–name和-n同时可以再命令行中使用，都表示了参数name。ArgumentParser通过parse_ags()方法解析参数，检查命令行，将每个参数转换为适当的类型，所以在脚本中同时也可以使用args.n和args.name获取到参数，相对应的如果没有传入该参数，脚本中则获取到None。</p>
+</blockquote>
+<p>查看命令行参数之后脚本的帮助提示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -h</span><br><span class="line">usage: test_argparse.py [-h] [--name NAME] [--age AGE] [--sex SEX] --type TYPE</span><br><span class="line"></span><br><span class="line">Test for argparse module.</span><br><span class="line"></span><br><span class="line">optional arguments:</span><br><span class="line">  -h, --help            show this help message and exit</span><br><span class="line">  --name NAME, -n NAME  name attribute: 非必要属性</span><br><span class="line">  --age AGE, -a AGE     age attribute: 非必要属性</span><br><span class="line">  --sex SEX, -s SEX     sex attribute: 非必要属性</span><br><span class="line">  --type TYPE, -t TYPE  type attribute: 非必要属性</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>另外在添加命令行参数的属性中，还有更多的设置，多余的可以参考Python官方文档，里面都有详细的标注，这里就不展开来讲，总结的就是关于argparse模块的使用非常简便，同时十分人性化，也很符合日常工作的需要。</p>
+</blockquote>
+<h3 id="click模块"><a href="#click模块" class="headerlink" title="click模块"></a>click模块</h3><p>先开一个简单的使用示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> click</span><br><span class="line"></span><br><span class="line"><span class="meta">@click.command()</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--name&quot;</span>, default=<span class="string">&quot;zhangsan&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--age&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--sex&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 必要属性&quot;</span>, required=<span class="literal">True</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">t, name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=t))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    hello()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>执行脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_click.py -t 1 --age 13 --sex man</span><br></pre></td></tr></table></figure>
+<p>脚本输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: 1</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>click模块是Flask团队优秀的开源项目，使用方法和argparse模块很相似，同样为命令行封装了大量的方法，使用者只需要专注代码功能的实现。<br> click模块和argparse模块不同的地方就是，click模块使用装饰器的方式给函数添加命令行属性，关于装饰器简单来讲就是能够在不修改原有函数的基础上添加功能。虽然使用装饰器但是添加命令行属性的方式和argparse模块很相似，包括options中常用的参数含义也有很多类似的地方。值得注意的就是一开始需要通过command()将函数成为命令行的接口。<br> 关于的click模块的就大致讲到这里，其余有兴趣的可以再去了解一下。</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>关于这三个模块值得注意的是，尽量贴近自己应用场景去选择，真正的做到自己能够方便使用才是你去使用这些模块的原因。</p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Argv</tag>
+        <tag>argparse</tag>
+        <tag>cli</tag>
       </tags>
   </entry>
 </search>
