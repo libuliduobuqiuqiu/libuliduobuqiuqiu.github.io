@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Flask一个g引发的思考</title>
+    <url>/2023/12/03/Flask%E4%B8%80%E4%B8%AAg%E5%BC%95%E5%8F%91%E7%9A%84%E6%80%9D%E8%80%83/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><blockquote>
+<p>最近有面试一家公司，感觉准备的不是很充分，感觉很多东西都答的挺菜的，自己写的文章里面的问题都没答上来更是汗流浃背。<br>所以大概列了一下其中的问题，进行了一番总结补充，重新制定一下复习的计划。<br>其中里面我觉得有个问题我觉得挺有意思的，我记得大概是问了一下Flask的g有使用过？具体实现的原理是啥？<br>我想了一下 ，这不就是平时用来存储一下数据的全局变量的么？有啥原理的，后面大概翻了一下Flask的源码，具体从头捋了一遍，所以就有这篇文章。</p>
+</blockquote>
+<h2 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h2><h3 id="g"><a href="#g" class="headerlink" title="g"></a>g</h3><p><strong>首先我们从平时导入的”from flask import g”入手，定位到flask框架代码中g，作为起点继续往下探索；</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">_cv_app: ContextVar[AppContext] = ContextVar(<span class="string">&quot;flask.app_ctx&quot;</span>)</span><br><span class="line">app_ctx: AppContext = LocalProxy(  <span class="comment"># type: ignore[assignment]</span></span><br><span class="line">    _cv_app, unbound_message=_no_app_msg</span><br><span class="line">)</span><br><span class="line">current_app: Flask = LocalProxy(  <span class="comment"># type: ignore[assignment]</span></span><br><span class="line">    _cv_app, <span class="string">&quot;app&quot;</span>, unbound_message=_no_app_msg</span><br><span class="line">)</span><br><span class="line">g: _AppCtxGlobals = LocalProxy(  <span class="comment"># type: ignore[assignment]</span></span><br><span class="line">    _cv_app, <span class="string">&quot;g&quot;</span>, unbound_message=_no_app_msg</span><br><span class="line">)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这里面重要的就两块地方，_cv_app，g：</p>
+<ul>
+<li>_cv_app这个对象实际上就是初始化一个上下文变量ContexVar，根据这个类型注解，这个上下文变量中的值是AppContext对象；</li>
+<li>g实质就是_AppCtxGlobals对象，但是这里是通过LocalProxy代理对象进行访问；</li>
+</ul>
+<h3 id="LocalProxy-init"><a href="#LocalProxy-init" class="headerlink" title="LocalProxy.__init__"></a>LocalProxy.__init__</h3><p><strong>接下来继续分析一下LocalProxy这个代理对象是怎么代理访问_AppCtxGlobals，也就是应用上下文中的对象：（代码过长，我截取初始化中最重要的几部分）</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params"></span></span><br><span class="line"><span class="params">        self,</span></span><br><span class="line"><span class="params">        local: ContextVar[T] | Local | LocalStack[T] | t.<span class="type">Callable</span>[[], T],</span></span><br><span class="line"><span class="params">        name: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span>,</span></span><br><span class="line"><span class="params">        *,</span></span><br><span class="line"><span class="params">        unbound_message: <span class="built_in">str</span> | <span class="literal">None</span> = <span class="literal">None</span>,</span></span><br><span class="line"><span class="params">    </span>) -&gt; <span class="literal">None</span>:</span><br></pre></td></tr></table></figure>
+<ul>
+<li>定义传入的参数，这里local就是_cv_app上下文变量，name就是”g”；</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> name <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">    get_name = _identity</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    get_name = attrgetter(name)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>生成一个可调用对象，用于提取对象中的属性值。后续get_name(obj)相当于直接调用obj.name属性；</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">elif</span> <span class="built_in">isinstance</span>(local, ContextVar):</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_get_current_object</span>() -&gt; T:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            obj = local.get()</span><br><span class="line">        <span class="keyword">except</span> LookupError:</span><br><span class="line">            <span class="keyword">raise</span> RuntimeError(unbound_message) <span class="keyword">from</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> get_name(obj)</span><br></pre></td></tr></table></figure>
+<p>这部分有两块地方比较模糊，local.get()，get_name(obj)</p>
+<ul>
+<li>由于传入local是ContexVar类型，定位到if匹配的代码，这部分是定义_get_current_object方法</li>
+<li>local.get()其实返回的就是set进去的AppContext对象，所以obj就是AppContext类型；</li>
+<li>get_name方法前面定义好了，所以可以理解为AppContext.g；</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="built_in">object</span>.__setattr__(self, <span class="string">&quot;_get_current_object&quot;</span>, _get_current_object)</span><br></pre></td></tr></table></figure>
+<p>LocalProxy代理器绑定_get_current_object方法</p>
+<h3 id="LocalProxy-setattr-、-getattr"><a href="#LocalProxy-setattr-、-getattr" class="headerlink" title="LocalProxy.__setattr__、__getattr__"></a>LocalProxy.__setattr__、__getattr__</h3><p>众所周知，当给一个类绑定属性时候，会调用类的__setattr__方法，当读取一个不存在的属性时，会调用__getattr__方法，调用一个已存在属性时，会调用__getattribute__方法；</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">__getattr__ = _ProxyLookup(<span class="built_in">getattr</span>)</span><br><span class="line"><span class="comment"># __getattribute__ triggered through __getattr__</span></span><br><span class="line">__setattr__ = _ProxyLookup(<span class="built_in">setattr</span>)  <span class="comment"># type: ignore</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>这部分有个地方挺有意思的，就是__getattribute__方法源代码是注释的了，并且配上通过__getattr__触发，这里可能需要绕个弯，本质上这里是代理器对象，目标对象并不是直接绑定到代理的。所以其实每次通过g去获取存储的对象是，这个代理器的__getattr__就会被触发了；</li>
+<li>设置__setattr__方法；可以理解为后续LocalProxy的实例对象设置属性时，_ProxyLookup(setattr)(self, key, value)，这个self指的是LocalProxy的实例对象</li>
+</ul>
+<h3 id="PorxyLookup-init"><a href="#PorxyLookup-init" class="headerlink" title="_PorxyLookup.__init__"></a>_PorxyLookup.__init__</h3><p><strong>接下来，我们接到看这个_PorxyLookup对象，这个本质上就是个描述器，用于查找对象的。</strong></p>
+<p>描述器开始有点熟悉了，上面提到_ProxyLookup的实例当成方法一样调用的时候，应该先定位到_PorxyLookup对象__call__方法，先看看_PorxyLookup的初始化__init__：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params"></span></span><br><span class="line"><span class="params">    self,</span></span><br><span class="line"><span class="params">    f: t.<span class="type">Callable</span> | <span class="literal">None</span> = <span class="literal">None</span>,</span></span><br><span class="line"><span class="params">    fallback: t.<span class="type">Callable</span> | <span class="literal">None</span> = <span class="literal">None</span>,</span></span><br><span class="line"><span class="params">    class_value: t.<span class="type">Any</span> | <span class="literal">None</span> = <span class="literal">None</span>,</span></span><br><span class="line"><span class="params">    is_attr: <span class="built_in">bool</span> = <span class="literal">False</span>,</span></span><br><span class="line"><span class="params"></span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">    bind_f: t.<span class="type">Callable</span>[[LocalProxy, t.<span class="type">Any</span>], t.<span class="type">Callable</span>] | <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">hasattr</span>(f, <span class="string">&quot;__get__&quot;</span>):</span><br><span class="line">        <span class="comment"># A Python function, can be turned into a bound method.</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">def</span> <span class="title function_">bind_f</span>(<span class="params">instance: LocalProxy, obj: t.<span class="type">Any</span></span>) -&gt; t.<span class="type">Callable</span>:</span><br><span class="line">            <span class="keyword">return</span> f.__get__(obj, <span class="built_in">type</span>(obj))  <span class="comment"># type: ignore</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">elif</span> f <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="comment"># A C function, use partial to bind the first argument.</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">def</span> <span class="title function_">bind_f</span>(<span class="params">instance: LocalProxy, obj: t.<span class="type">Any</span></span>) -&gt; t.<span class="type">Callable</span>:</span><br><span class="line">            <span class="keyword">return</span> partial(f, obj)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># Use getattr, which will produce a bound method.</span></span><br><span class="line">        bind_f = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    self.bind_f = bind_f</span><br><span class="line">    self.fallback = fallback</span><br><span class="line">    self.class_value = class_value</span><br><span class="line">    self.is_attr = is_attr</span><br></pre></td></tr></table></figure>
+<ul>
+<li>判断传入的f是否为描述器，很显然传入的setattr为否，且f不为None：</li>
+<li>声明一个bind_f函数，函数用于返回partial对象，partial函数是用于固定了obj参数；</li>
+<li>前面提到传入的是setattr，setattr的函数定义setattr(x,y,z)，正常使用需要传入三个参数，才能达到x.y &#x3D; z的效果；</li>
+<li>现在就是bind_f直接返回的是固定了第一个参数为obj的setattr函数，后续只需要调用只需要传入后两个参数即可；<br><strong>(注意这个self.bind_f，后面会用到)</strong></li>
+</ul>
+<h3 id="PorxyLookup-call"><a href="#PorxyLookup-call" class="headerlink" title="_PorxyLookup.__call__"></a>_PorxyLookup.__call__</h3><p>接着继续看_PorxyLookup的__call__方法:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">__call__</span>(<span class="params">self, instance: LocalProxy, *args: t.<span class="type">Any</span>, **kwargs: t.<span class="type">Any</span></span>) -&gt; t.<span class="type">Any</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Support calling unbound methods from the class. For example,</span></span><br><span class="line"><span class="string">    this happens with ``copy.copy``, which does</span></span><br><span class="line"><span class="string">    ``type(x).__copy__(x)``. ``type(x)`` can&#x27;t be proxied, so it</span></span><br><span class="line"><span class="string">    returns the proxy type and descriptor.</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> self.__get__(instance, <span class="built_in">type</span>(instance))(*args, **kwargs)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这里其实就是当实例当做函数一样调用时会触发的__call__方法，这里可以看到instance对应着我们传入的LocalProxy实例对象，*args就是我们传入设置的参数了；</li>
+<li>后面就是调用描述器的__get__方法了，直接传入实例对象，实例类型；</li>
+</ul>
+<h3 id="PorxyLookup-get"><a href="#PorxyLookup-get" class="headerlink" title="_PorxyLookup.__get__"></a>_PorxyLookup.__get__</h3><p><strong>这部分算我们寻找设置g这个全局上下文变量的重点，把前面做的所有事情进行一次“回收”使用：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">__get__</span>(<span class="params">self, instance: LocalProxy, owner: <span class="built_in">type</span> | <span class="literal">None</span> = <span class="literal">None</span></span>) -&gt; t.<span class="type">Any</span>:</span><br><span class="line">    <span class="keyword">if</span> instance <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">if</span> self.class_value <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">return</span> self.class_value</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        obj = instance._get_current_object()</span><br><span class="line">    <span class="keyword">except</span> RuntimeError:</span><br><span class="line">        <span class="keyword">if</span> self.fallback <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">raise</span></span><br><span class="line"></span><br><span class="line">        fallback = self.fallback.__get__(instance, owner)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> self.is_attr:</span><br><span class="line">            <span class="comment"># __class__ and __doc__ are attributes, not methods.</span></span><br><span class="line">            <span class="comment"># Call the fallback to get the value.</span></span><br><span class="line">            <span class="keyword">return</span> fallback()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> fallback</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> self.bind_f <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">return</span> self.bind_f(instance, obj)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">getattr</span>(obj, self.name)</span><br></pre></td></tr></table></figure>
+<ol>
+<li>_get_current_object方法，前面在LocalProxy代理器对象绑定好的方法，方法里面其实最终返回的是就是一个AppContext.g对象；</li>
+<li>self.bind_f前面初始化刚绑定好的，这里其实就是返回一个固定参数的setattr函数，setattr的第一个参数固定成obj了;</li>
+<li>结合上面__call__方法，再把剩余需要设置的参数传进来，假设在flask框架设置g全局变量是g.name &#x3D; “flask”，其实在这里执行的就是setattr(AppContext.g, “name”, “flask”);</li>
+<li>所以就是调用目标对象AppContext中g属性的__setattr__方法；</li>
+</ol>
+<h2 id="整体总结"><a href="#整体总结" class="headerlink" title="整体总结"></a>整体总结</h2><p>整体看下来就是，废了老大劲，其实就是调用AppContext的方法。而里面代码架构的核心就是代理模式，使用者就是通过g这个代理器去访问AppContext里面的g属性。而这个AppContext对象则是，存放在_cv_app这个上下文变量。而这个g实质就是在存储数据的应用上下文。</p>
+<p><strong>下面展示一下AppContext类：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">AppContext</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;The app context contains application-specific information. An app</span></span><br><span class="line"><span class="string">    context is created and pushed at the beginning of each request if</span></span><br><span class="line"><span class="string">    one is not already active. An app context is also pushed when</span></span><br><span class="line"><span class="string">    running CLI commands.</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, app: Flask</span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">        self.app = app</span><br><span class="line">        self.url_adapter = app.create_url_adapter(<span class="literal">None</span>)</span><br><span class="line">        self.g: _AppCtxGlobals = app.app_ctx_globals_class()</span><br><span class="line">        self._cv_tokens: <span class="built_in">list</span>[contextvars.Token] = []</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">push</span>(<span class="params">self</span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;Binds the app context to the current context.&quot;&quot;&quot;</span></span><br><span class="line">        self._cv_tokens.append(_cv_app.<span class="built_in">set</span>(self))</span><br><span class="line">        appcontext_pushed.send(self.app, _async_wrapper=self.app.ensure_sync)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这里面有趣的点就是什么时候触发这个push方法，即需要把当前的AppContext保存到_cv_app这个上下文变量中，不然你直接在flask程序启动的前调用这个g，会发现抛出一个RuntimeError的异常，因为_cv_app里面是空的；</li>
+<li>这里不详细列了，有兴趣的再去仔细看看，答案是Flask对象中的wsgi_app方法中，当<strong>WSGI服务器调用Falsk对象作为应用程序</strong>时就会调用wsgi_app方法，wsgi_app就会推送应用程序上下文；</li>
+</ul>
+<h2 id="最后一试"><a href="#最后一试" class="headerlink" title="最后一试"></a>最后一试</h2><p>上面提到很关键的代理模式，众所周知，一般来说代理模式目的就是<strong>防止调用者和执行者发生关系</strong>，所以需要一个代理对象。如果上面这么绕的代码看不懂，其实可以简洁成以下的代码，<br>或许你直接就豁然开朗了 。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> werkzeug.local <span class="keyword">import</span> LocalProxy</span><br><span class="line"><span class="keyword">from</span> contextvars <span class="keyword">import</span> ContextVar</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Info</span>:</span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Person</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        self.info = Info()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    flask_var = ContextVar(<span class="string">&quot;flask.context&quot;</span>)</span><br><span class="line">    p = Person()</span><br><span class="line">    flask_var.<span class="built_in">set</span>(p)</span><br><span class="line"></span><br><span class="line">    proxy = LocalProxy(flask_var, <span class="string">&quot;info&quot;</span>, unbound_message=<span class="string">&quot;Error bound msg&quot;</span>)</span><br><span class="line">    proxy.name = <span class="string">&quot;zhangsan&quot;</span></span><br><span class="line">    proxy.age = <span class="number">12</span></span><br><span class="line">    <span class="built_in">print</span>(p.info.name, p.info.age)</span><br></pre></td></tr></table></figure>
+
+<p>所以梳理完整遍代码，好像大概知道了一点原理。。。</p>
+<p>参考链接：</p>
+<blockquote>
+<p><a class="link"   href="https://www.cnblogs.com/cwp-bg/p/10084480.html" >https://www.cnblogs.com/cwp-bg/p/10084480.html<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+<blockquote>
+<p><a class="link"   href="https://flask.palletsprojects.com/en/3.0.x/appcontext/" >https://flask.palletsprojects.com/en/3.0.x/appcontext/<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Flask</tag>
+        <tag>g</tag>
+        <tag>源码阅读</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Gorm框架-CRUD操作</title>
+    <url>/2023/06/24/Gorm%E6%A1%86%E6%9E%B6-CRUD%E6%93%8D%E4%BD%9C/</url>
+    <content><![CDATA[<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><h3 id="关于ORM（Object-Relational-Mapping"><a href="#关于ORM（Object-Relational-Mapping" class="headerlink" title="关于ORM（Object-Relational Mapping)"></a>关于ORM（Object-Relational Mapping)</h3><p>ORM其实指的是将关系型数据库中的数据和面向对象程序中对象模型进行映射的技术；<br>ORM可以用来自动化处理SQL语句的生成和执行，程序员可以更专注于业务逻辑的实现而不是数据的细节。</p>
+<p>为什么需要ORM？（参考gpt，结合自身使用过程）</p>
+<ul>
+<li>提高开发效率（自动化生成SQL，减少手动编写SQL时间）</li>
+<li>只需要定义好模型，可以自动处理不同数据库之间的差异；(如果传统编写，换数据库相当于需要吧原来的逻辑重写一遍)</li>
+<li>易于维护，方便拓展（传统编写SQL如果多起来，排查问题和重构时很痛苦）；</li>
+<li>安全，参数化查询避免SQL注入</li>
+</ul>
+<h3 id="关于Gorm"><a href="#关于Gorm" class="headerlink" title="关于Gorm"></a>关于Gorm</h3><p>Gorm是一个全功能的ORM框架，主要针对Go语言而开发，支持处理主流的关系型数据库（MySQL、PostgreSQL、SQL Server)<br>以及一些NoSQL数据库。由于这边是直接使用的是Gorm 2，关于Gorm的重要特性可以以gorm官网为准，可以直接参考：</p>
+<blockquote>
+<p><a class="link"   href="https://gorm.io/zh_CN/docs/index.html#%E5%AE%89%E8%A3%85" >https://gorm.io/zh_CN/docs/index.html#%E5%AE%89%E8%A3%85<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+<h2 id="安装和设置"><a href="#安装和设置" class="headerlink" title="安装和设置"></a>安装和设置</h2><h3 id="快速安装Gorm2，Mysql驱动"><a href="#快速安装Gorm2，Mysql驱动" class="headerlink" title="快速安装Gorm2，Mysql驱动"></a>快速安装Gorm2，Mysql驱动</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">go get gorm.io/gorm</span><br><span class="line">go get gorm.io/driver/mysql</span><br></pre></td></tr></table></figure>
+
+<h3 id="初始化Mysql连接-参考官网"><a href="#初始化Mysql连接-参考官网" class="headerlink" title="初始化Mysql连接(参考官网)"></a>初始化Mysql连接(参考官网)</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">  <span class="string">&quot;gorm.io/driver/mysql&quot;</span></span><br><span class="line">  <span class="string">&quot;gorm.io/gorm&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">  <span class="comment">// 参考 https://github.com/go-sql-driver/mysql#dsn-data-source-name 获取详情</span></span><br><span class="line">  dsn := <span class="string">&quot;user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&amp;parseTime=True&amp;loc=Local&quot;</span></span><br><span class="line">  db, err := gorm.Open(mysql.Open(dsn), &amp;gorm.Config&#123;&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>定义DSN（Data Source Name)连接数据库字符串dsn；</li>
+<li>传入MySQL驱动，初始化gorm数据库连接；</li>
+</ul>
+<p><strong>这是我自己定义初始化连接，读取对应配置文件</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Config <span class="keyword">struct</span> &#123;</span><br><span class="line">	MysqlConfig DBConfig <span class="string">`json:&quot;mysql&quot;`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> DBConfig <span class="keyword">struct</span> &#123;</span><br><span class="line">	Username <span class="type">string</span> <span class="string">`json:&quot;username&quot;`</span></span><br><span class="line">	Password <span class="type">string</span> <span class="string">`json:&quot;password&quot;`</span></span><br><span class="line">	Host     <span class="type">string</span> <span class="string">`json:&quot;host&quot;`</span></span><br><span class="line">	Port     <span class="type">int</span>    <span class="string">`json:&quot;port&quot;`</span></span><br><span class="line">	DBName   <span class="type">string</span> <span class="string">`json:&quot;prefix&quot;`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">initDB</span><span class="params">()</span></span> (db *gorm.DB, err <span class="type">error</span>) &#123;</span><br><span class="line">	confPath := <span class="string">&quot;conf.json&quot;</span></span><br><span class="line">	<span class="keyword">if</span> _, err = os.Stat(confPath); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> config Config</span><br><span class="line">	<span class="keyword">if</span> err = configor.Load(&amp;config, confPath); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 新建Database Gorm连接</span></span><br><span class="line">	mysqlConfig := &amp;config.MysqlConfig</span><br><span class="line">	dsn := fmt.Sprintf(<span class="string">&quot;%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&quot;</span>,</span><br><span class="line">		mysqlConfig.Username, mysqlConfig.Password, mysqlConfig.Host,</span><br><span class="line">		mysqlConfig.Port, mysqlConfig.DBName)</span><br><span class="line">	db, err = gorm.Open(mysql.Open(dsn), &amp;gorm.Config&#123;&#125;)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	db, err := initDB()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalf(err.Error())</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	db = db.Debug()</span><br><span class="line">	execSQL(db)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>这边我在项目中定义了关于数据库连接的结构体，通过读取预设好的config.json文件，加载好预设的配置信息；</li>
+<li>另外这边的db &#x3D; db.Debug()，可以开启db的DEBUG模式，能够打印出执行的SQL语句以及对应的参数，以方便调试；</li>
+</ul>
+<p><strong>config.json参考</strong></p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mysql&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;username&quot;</span><span class="punctuation">:</span> <span class="string">&quot;root&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;password&quot;</span><span class="punctuation">:</span> <span class="string">&quot;root&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;host&quot;</span><span class="punctuation">:</span> <span class="string">&quot;127.0.0.1&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;prefix&quot;</span><span class="punctuation">:</span> <span class="string">&quot;GormDemo&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;port&quot;</span><span class="punctuation">:</span> <span class="number">3306</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+
+<h3 id="定义模型"><a href="#定义模型" class="headerlink" title="定义模型"></a>定义模型</h3><p>由于Gorm模型的结构体名的蛇形复数作为表名，字段名的蛇形作为列名，如果Mysql表的设计遵循了GORM约定，则可少写很多代码，<br>但是实际情况，往往不是这样：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> User <span class="keyword">struct</span> &#123;</span><br><span class="line">	ID <span class="type">string</span> <span class="string">`gorm:&quot;column:id&quot; faker:&quot;-&quot;`</span></span><br><span class="line">	Email <span class="type">string</span> <span class="string">`gorm:&quot;column:email&quot; faker:&quot;email&quot;`</span></span><br><span class="line">	Password <span class="type">string</span> <span class="string">`gorm:&quot;column:password&quot; faker:&quot;password&quot;`</span></span><br><span class="line">	PhoneNumber <span class="type">string</span> <span class="string">`gorm:&quot;column:phone_number&quot; faker:&quot;phone_number&quot;`</span></span><br><span class="line">	UserName <span class="type">string</span> <span class="string">`gorm:&quot;column:username&quot; faker:&quot;username&quot;`</span></span><br><span class="line">	FirstName <span class="type">string</span> <span class="string">`gorm:&quot;first_name&quot; faker:&quot;first_name&quot;`</span></span><br><span class="line">	LastName <span class="type">string</span> <span class="string">`gorm:&quot;last_name&quot; faker:&quot;last_name&quot;`</span></span><br><span class="line">	Century <span class="type">string</span> <span class="string">`gorm:&quot;century&quot; faker:&quot;century&quot;`</span></span><br><span class="line">	Date <span class="type">string</span> <span class="string">`gorm:&quot;date&quot; faker:&quot;date&quot;`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(u User)</span></span> TableName() <span class="type">string</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="string">&quot;user&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>这是我定义的结构体User，通过实现Tabler接口来更改默认表名，TableName()方法会将Music表名重写为user(如果不修改则会默认为users);</li>
+<li>修改对应字段对应数据的列名，修改标签column；</li>
+<li>模型中的faker的标签可以忽略，这边主要是生成假数据才会使用到的；</li>
+</ul>
+<h2 id="CRUD"><a href="#CRUD" class="headerlink" title="CRUD"></a>CRUD</h2><h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><p><strong>单挑记录插入</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// insertOneRow 单挑记录插入</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">insertOneRow</span><span class="params">(db *gorm.DB)</span></span>&#123;</span><br><span class="line">	<span class="keyword">var</span> tmpUser *User</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 生成随机数据</span></span><br><span class="line">	err := faker.FakeData(&amp;tmpUser)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalf(err.Error())</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	result := db.Create(tmpUser)</span><br><span class="line">	<span class="keyword">if</span> result.Error != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalf(result.Error.Error())</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;result RowsAffected: &quot;</span>, result.RowsAffected)</span><br><span class="line">	fmt.Printf(<span class="string">&quot;%+v\n&quot;</span>, tmpUser)</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>由于想生成写测试数据，所以使用了github.com&#x2F;go-faker&#x2F;faker生成假数据，有兴趣可以了解，像前面的结构体定义Tag之后就能生成对应的假数据；</li>
+<li>基本创建单条记录没啥好说的，只要定义模型的结构体，补充数据，然后插入即可；</li>
+</ul>
+<p><strong>批量记录插入</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// insertRows 批量插入</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">insertRows</span><span class="params">(db *gorm.DB)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> users []*User</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		tmpUser := User&#123;&#125;</span><br><span class="line">		err := faker.FakeData(&amp;tmpUser)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Fatal(err.Error())</span><br><span class="line">		&#125;</span><br><span class="line">		users = <span class="built_in">append</span>(users, &amp;tmpUser)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	result := db.Create(users)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> result.Error != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalf(result.Error.Error())</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;RowsAffected: &quot;</span>, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> _, m := <span class="keyword">range</span> users &#123;</span><br><span class="line">		fmt.Printf(<span class="string">&quot;%+v\n&quot;</span>, m)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>定义钩子函数</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(u *User)</span></span> BeforeCreate(tx *gorm.DB) (err <span class="type">error</span>)&#123;</span><br><span class="line">	u.ID = uuid.New()</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>在插入记录之前，生成uuid（具体根据实际业务场景补充处理的业务逻辑，包括检验等）</li>
+<li>官方还提供提供很多额外的钩子函数（BeforeSave，AfterSave等）具体参考官方提供的文档</li>
+</ul>
+<h3 id="查询"><a href="#查询" class="headerlink" title="查询"></a>查询</h3><p><strong>简单查询</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">printRecord</span><span class="params">(u *User, result *gorm.DB)</span></span>&#123;</span><br><span class="line">	fmt.Printf(<span class="string">&quot;%v\n&quot;</span>, u)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">printRecords</span><span class="params">(u []*User, result *gorm.DB)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> _, u := <span class="keyword">range</span> u &#123;</span><br><span class="line">		fmt.Println(u)</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">simpleQueryRow</span><span class="params">(db *gorm.DB)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查询第一条记录（主键升序）</span></span><br><span class="line">	<span class="keyword">var</span> firstUser *User</span><br><span class="line">	result := db.First(&amp;firstUser)</span><br><span class="line">	printRecord(firstUser, result)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 仅当有一个ID主键时，可直接定义User时把ID初始化</span></span><br><span class="line">	firstIDUser2 := &amp;User&#123;ID: <span class="string">&quot;e8efff22-a497-4a88-be1e-5123eb23ff75&quot;</span>&#125;</span><br><span class="line">	result = db.First(&amp;firstIDUser2)</span><br><span class="line">	printRecord(firstIDUser2, result)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查询表中第一条记录（没有指定排序字段）</span></span><br><span class="line">	<span class="keyword">var</span> firstUser2 *User</span><br><span class="line">	result = db.Take(&amp;firstUser2)</span><br><span class="line">	printRecord(firstUser2, result)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查询表中最后一条记录（主键排序）</span></span><br><span class="line">	<span class="keyword">var</span> lastUser *User</span><br><span class="line">	result = db.Last(&amp;lastUser)</span><br><span class="line">	printRecord(lastUser, result)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查询当前所有记录</span></span><br><span class="line">	<span class="keyword">var</span> users []*User</span><br><span class="line">	result = db.Find(&amp;users)</span><br><span class="line">	printRecords(users, result)</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>这几个都是按照官方给出的示例，整理了一下日常比较常用到的查询操作</li>
+</ul>
+<p><strong>条件查询</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">condQueryRow</span><span class="params">(db *gorm.DB)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查询当前username为condQueryRow的第一条记录（Struct方式）</span></span><br><span class="line">	<span class="keyword">var</span> tmpUser1 *User</span><br><span class="line">	result := db.Where(&amp;User&#123;UserName: <span class="string">&quot;qNptxqb&quot;</span>&#125;).First(&amp;tmpUser1)</span><br><span class="line">	printRecord(tmpUser1, result)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查询当前username为condQueryRow的第一条记录（Map方式）</span></span><br><span class="line">	<span class="keyword">var</span> tmpUser2 *User</span><br><span class="line">	result = db.Where(<span class="keyword">map</span>[<span class="type">string</span>]<span class="keyword">interface</span>&#123;&#125;&#123;<span class="string">&quot;username&quot;</span>: <span class="string">&quot;qNptxqb&quot;</span>&#125;).First(&amp;tmpUser2)</span><br><span class="line">	printRecord(tmpUser2, result)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 指定Century查询字段查询记录</span></span><br><span class="line">	<span class="keyword">var</span> tmpUser3 []User</span><br><span class="line">	result = db.Where(&amp;User&#123;Century: <span class="string">&quot;VII&quot;</span>, UserName: <span class="string">&quot;jaQlaFs&quot;</span>&#125;, <span class="string">&quot;Century&quot;</span>).Find(&amp;tmpUser3)</span><br><span class="line">	printRecords(tmpUser3, result)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// String 条件，直接写表达式</span></span><br><span class="line">	<span class="keyword">var</span> tmpUser4 *User</span><br><span class="line">	result = db.Where(<span class="string">&quot;username = ?&quot;</span>, <span class="string">&quot;qNptxqb&quot;</span>).First(&amp;tmpUser4)</span><br><span class="line">	printRecord(tmpUser4, result)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> users []User</span><br><span class="line">	result = db.Where(<span class="string">&quot;date &gt; ?&quot;</span>, <span class="string">&quot;2010-10-1&quot;</span>).Find(&amp;users)</span><br><span class="line">	printRecords(users, result)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Order排序（默认升序）</span></span><br><span class="line">	<span class="keyword">var</span> users2 []User</span><br><span class="line">	result = db.Where(<span class="string">&quot;date &gt; ?&quot;</span>, <span class="string">&quot;2010-10-1&quot;</span>).Order(<span class="string">&quot;date&quot;</span>).Find(&amp;users2)</span><br><span class="line">	printRecords(users2, result)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 查询特定的字段，不返回所有字段</span></span><br><span class="line">	<span class="keyword">var</span> tmpUser5 *User</span><br><span class="line">	result = db.Select(<span class="string">&quot;username&quot;</span>, <span class="string">&quot;date&quot;</span>).Where(<span class="string">&quot;username = ?&quot;</span>, <span class="string">&quot;qNptxqb&quot;</span>).First(&amp;tmpUser5)</span><br><span class="line">	printRecord(tmpUser5, result)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>Gorm提供了很多条件查询的场景，目前对我而言基本的查询业务逻辑都能支持。具体可能出现一些复杂的sql，后面会介绍怎么直接使用sql查询；</li>
+</ul>
+<p><strong>高级查询</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> APIUser <span class="keyword">struct</span> &#123;</span><br><span class="line">	ID <span class="type">string</span> <span class="string">`gorm:&quot;primaryKey,column:id&quot;`</span></span><br><span class="line">	UserName <span class="type">string</span> <span class="string">`gorm:&quot;column:username&quot;`</span></span><br><span class="line">	FirstName <span class="type">string</span> <span class="string">`gorm:&quot;first_name&quot;`</span></span><br><span class="line">	LastName <span class="type">string</span> <span class="string">`gorm:&quot;last_name&quot;`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">advancedQueryRow</span><span class="params">(db *gorm.DB)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 智能选择字段，如果经常只需要查询某些字段，可以重新定义小结构体</span></span><br><span class="line">	<span class="keyword">var</span> apiUser []APIUser</span><br><span class="line">	result := db.Model(&amp;User&#123;&#125;).Find(&amp;apiUser)</span><br><span class="line">	<span class="keyword">for</span> _, user := <span class="keyword">range</span> apiUser&#123;</span><br><span class="line">		fmt.Println(user)</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 扫描结果绑定值map[string]interface&#123;&#125; 或者 []map[string]interface&#123;&#125;</span></span><br><span class="line">	<span class="keyword">var</span> users []<span class="keyword">map</span>[<span class="type">string</span>]<span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">	result = db.Model(&amp;User&#123;&#125;).Find(&amp;users)</span><br><span class="line">	<span class="keyword">for</span> _, user := <span class="keyword">range</span> users&#123;</span><br><span class="line">		fmt.Println(user)</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Pluck查询单个列，并将结果扫描到切片</span></span><br><span class="line">	<span class="keyword">var</span> emails []<span class="type">string</span></span><br><span class="line">	result = db.Model(&amp;User&#123;&#125;).Pluck(<span class="string">&quot;email&quot;</span>,&amp;emails)</span><br><span class="line">	fmt.Println(emails)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Count查询</span></span><br><span class="line">	<span class="keyword">var</span> count <span class="type">int64</span></span><br><span class="line">	result = db.Model(&amp;User&#123;&#125;).Where(<span class="string">&quot;date &gt; ?&quot;</span>, <span class="string">&quot;2012-10-22&quot;</span>).Count(&amp;count)</span><br><span class="line">	fmt.Println(count)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>定义小结构体可以实现在调用API时自动选择特定字段</li>
+<li>Pluck适合查询单个列，如果需要查询多个常用字段可以通过Select和Scan</li>
+</ul>
+<h3 id="更新"><a href="#更新" class="headerlink" title="更新"></a>更新</h3><p><strong>常用更新操作</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">updateRow</span><span class="params">(db *gorm.DB)</span></span>&#123;</span><br><span class="line">	<span class="comment">// Save会保存所有字段，即使字段是零值，如果保存的值没有主键，就会创建，否则则是更新指定记录</span></span><br><span class="line">	result := db.Save(&amp;User&#123;ID: <span class="string">&quot;e8efff22-a497-4a88-be1e-5123eb23ff75&quot;</span>, UserName: <span class="string">&quot;zhangsan&quot;</span>, Date: <span class="string">&quot;2023-12-12&quot;</span>&#125;)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 更新单个列</span></span><br><span class="line">	result = db.Model(&amp;User&#123;&#125;).Where(<span class="string">&quot;username = ?&quot;</span>, <span class="string">&quot;jaQlaFs&quot;</span>).Update(<span class="string">&quot;first_name&quot;</span>, <span class="string">&quot;zhangsan&quot;</span>)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 更新多个列</span></span><br><span class="line">	result = db.Model(&amp;User&#123;&#125;).Where(<span class="string">&quot;username = ?&quot;</span>, <span class="string">&quot;zhangsan&quot;</span>).Updates(User&#123;FirstName: <span class="string">&quot;zhangsan2&quot;</span>, LastName: <span class="string">&quot;zhangsan3&quot;</span>&#125;)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 更新指定列(Select指定last_name)</span></span><br><span class="line">	result = db.Model(&amp;User&#123;&#125;).Where(<span class="string">&quot;username = ?&quot;</span>, <span class="string">&quot;zhangsan&quot;</span>).Select(<span class="string">&quot;last_name&quot;</span>).Updates(User&#123;FirstName: <span class="string">&quot;zhangsan2&quot;</span>, LastName: <span class="string">&quot;zhangsan4&quot;</span>&#125;)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>具体一些更新的操作和查询类似，具体区分即可；</li>
+</ul>
+<h3 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h3><p><strong>常用删除操作</strong></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">deleteRows</span><span class="params">(db *gorm.DB)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 指定匹配字段删除数据</span></span><br><span class="line">	result := db.Delete(&amp;User&#123;&#125;, <span class="keyword">map</span>[<span class="type">string</span>]<span class="keyword">interface</span>&#123;&#125;&#123;<span class="string">&quot;username&quot;</span>: <span class="string">&quot;NJrauTj&quot;</span>&#125;)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	result = db.Delete(&amp;User&#123;&#125;, <span class="string">&quot;username = ?&quot;</span>, <span class="string">&quot;NJrauTj&quot;</span>)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Where指定字段匹配删除数据</span></span><br><span class="line">	result = db.Where(<span class="string">&quot;username = ? and phone_number = ?&quot;</span>, <span class="string">&quot;jXQKmPv&quot;</span>, <span class="string">&quot;574-821-9631&quot;</span>).Delete(&amp;User&#123;&#125;)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 批量删除的两种方式</span></span><br><span class="line">	result = db.Where(<span class="string">&quot;email like ?&quot;</span>, <span class="string">&quot;%.com%&quot;</span>).Delete(&amp;User&#123;&#125;)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	result = db.Delete(&amp;User&#123;&#125;, <span class="string">&quot;email like ?&quot;</span>, <span class="string">&quot;%.com%&quot;</span>)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>普通删除常用场景匹配指定单挑数据删除以及批量删除，语法和更新类似；</li>
+<li>Gorm文档中有涉及禁用全局删除，即当执行不带任何条件的批量删除时就会返回错误；以及关于删除的钩子函数有实用<br>场景的同学，可以看官方文档，这里不再赘述；</li>
+</ul>
+<h3 id="原生SQL和SQL生成器"><a href="#原生SQL和SQL生成器" class="headerlink" title="原生SQL和SQL生成器"></a>原生SQL和SQL生成器</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// execSQL 执行原生SQL语句</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">execSQL</span><span class="params">(db *gorm.DB)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 将查询SQL的结果映射到指定的单个变量中</span></span><br><span class="line">	<span class="keyword">var</span> oneUser User</span><br><span class="line">	result := db.Raw(<span class="string">&quot;SELECT * FROM user LIMIT 1&quot;</span>).Scan(&amp;oneUser)</span><br><span class="line">	fmt.Println(oneUser)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 将查询SQL的批量结果映射到列表中</span></span><br><span class="line">	<span class="keyword">var</span> users []User</span><br><span class="line">	result = db.Raw(<span class="string">&quot;SELECT * FROM user&quot;</span>).Scan(&amp;users)</span><br><span class="line">	<span class="keyword">for</span> _, user := <span class="keyword">range</span> users &#123;</span><br><span class="line">		fmt.Println(user)</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> updateUser User</span><br><span class="line">	result = db.Raw(<span class="string">&quot;UPDATE users SET username = ? where id = ?&quot;</span>, <span class="string">&quot;toms jobs&quot;</span>, <span class="string">&quot;ab6f089b-3272-49b5-858f-a93ed5a43b4f&quot;</span>).Scan(&amp;updateUser)</span><br><span class="line">	fmt.Println(updateUser)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 直接通过Exec函数执行Update操作，不返回任何查询结果？</span></span><br><span class="line">	result = db.Exec(<span class="string">&quot;UPDATE user SET username = ? where id = ?&quot;</span>, <span class="string">&quot;toms jobs&quot;</span>, <span class="string">&quot;ab6f089b-3272-49b5-858f-a93ed5a43b4f&quot;</span>)</span><br><span class="line">	fmt.Println(result.Error, result.RowsAffected)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// DryRun模式，在不执行的情况下生成SQL及其参数，可以用于准备或测试的SQL</span></span><br><span class="line">	<span class="keyword">var</span> tmpUsers []APIUser</span><br><span class="line">	stmt := db.Session(&amp;gorm.Session&#123;DryRun: <span class="literal">true</span>&#125;).Model(&amp;User&#123;&#125;).Find(&amp;tmpUsers).Statement</span><br><span class="line">	fmt.Println(stmt.SQL.String())</span><br><span class="line">	fmt.Println(stmt.Vars)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>备注：</p>
+<ul>
+<li>Scan函数是会将查询SQL的结果映射到定义的变量，如果不需要返回查询结果可以直接使用Exec函数执行原生SQL；</li>
+<li>DryRun模式，可以直接生成SQL机器参数，但是不会直接执行；</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>关于Gorm的CURD日常使用就介绍到这里，如果同学对Gorm感兴趣，可以接去Gorm官网，我这里只是简单介绍一下在日常业务环境经常使用的操作，具体Gorm中文文档地址。</p>
+<p>至于Gorm后面可能还会出几篇文章介绍Gorm模型之间的关联关系，以及关联模式下的CRUD；还有关于Gorm的性能优化，具体能搭配一些常用的插件。</p>
+<p>上述文章的源码：</p>
+<blockquote>
+<p><a class="link"   href="https://github.com/libuliduobuqiuqiu/GoDemo/blob/master/GormDemo/gorm_demo.go" >https://github.com/libuliduobuqiuqiu/GoDemo/blob/master/GormDemo/gorm_demo.go<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>Go</category>
+      </categories>
+      <tags>
+        <tag>Go</tag>
+        <tag>ORM</tag>
+        <tag>Gorm</tag>
+        <tag>Mysql</tag>
+        <tag>数据库</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python Socket编程</title>
+    <url>/2021/04/25/Python%20Socket%E7%BC%96%E7%A8%8B/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>关于Python Socket编程，首先需要了解几个计算机网络的知识，通过以下的几个问题，有助于更好的理解Socket编程的意义，以及整个框架方面的知识：</p>
+<ul>
+<li><p>TCP和UDP协议本质上的区别？</p>
+<blockquote>
+<p>TCP协议，面向连接，可靠，基于字节流的传输层通信协议；UDP协议无连接，不可靠，基于数据包的传输层协议。<br><br>TCP协议在建立连接的过程需要经历三次握手，断开连接则需要经历四次挥手，而这建立连接的过程增加了传输过程中的安全性。<br>而建立连接的过程则会消耗系统的资源，消耗更多的时间，而相比较UDP协议传输过程则不会出现这种问题。<br><br>总结来讲，基于TCP协议传输，需要不断的确认对方是否收到信息，从而建立连接（确认过程次数有限制，即三次握手），UDP协议传输则<br>不需要确认接收端是否收到信息，只需要将信息发给对方。</p>
+</blockquote>
+</li>
+<li><p>TCP&#x2F;IP协议栈、HTTP协议、Socket之间的区别和联系？</p>
+<blockquote>
+<p>TCP&#x2F;IP协议栈就是一系列网络协议，可以分为四层模型来分析：应用层、传输层、网络层、链路层；<br><br>HTTP协议（超文本传输协议）就是在这一协议栈中的应用层协议；HTTP协议简单来说，它的作用就是规范数据的格式，让程序能够方便的识别，并且收发双方都需要遵循同样的协议格式进行数据传输。(应用层的协议也和HTTP协议的作用类似，不一样的是定义不同的数据格式。)<br><br>Socket可以理解为TCP&#x2F;IP协议栈提供的对外的操作接口，即应用层通过网络协议进行通信的接口。Socket可以使用不同的网络协议进行端对端的通信；</p>
+</blockquote>
+</li>
+<li><p>TCP Socket服务器的通信过程？</p>
+<blockquote>
+<p>Server端：<br><br>建立连接（socket()函数创建socket描述符、bind()函数绑定特定的监听地址（ip+port)、listen()函数监听socket、accept()阻塞等待客户端连接）<br><br>数据交互（read()函数阻塞等待客户端发送数据、write()函数发送给客户端数据）<br><br>Client端：<br><br>建立连接（socket()函数创建socket描述符、connect()函数向指定的监听地址发送连接请求）<br><br>数据交互（wirte()函数发送服务端数据、read()函数足阻塞等待接受服务端发送的数据）<br></p>
+</blockquote>
+</li>
+<li><p>socket和websocket之间的联系？</p>
+<blockquote>
+<p>webosocket是一种通信协议，不同于HTTP请求，客户端请求服务端资源，服务端响应的通信过程；websocket允许服务端主动<br>向客户端推送消息，同时做到客户端和服务端双向通讯的协议。（具体底层原理有待后面实践，暂时未接触）</p>
+</blockquote>
+</li>
+<li><p>HTTP,WSGI协议的联系和区别？</p>
+<blockquote>
+<p>HTTP协议（超文本传输协议），属于TCP&#x2F;IP协议栈中应用层的协议。用于规范传输数据的格式，是一种客户端和服务端传输的规则。<br><br>WSGI协议则是Python定义的Web服务器和框架程序通信的接口规则。两者联系不大，强行说的话，Python框架程序主要处理的是HTTP请求。<br><br>（后期可以实现一个WSGI协议的Python框架，用于处理HTTP请求的实验。）</p>
+</blockquote>
+</li>
+<li><p>主流Web框架，异步Web框架？</p>
+<blockquote>
+<p>主流Web框架：Django、Flask<br><br>异步Web框架：Tornado（内置异步模块）、Snaic（Python自带asyncio)、FastAPI（基于Starlette库） 、aiohttp（基于asyncio）</p>
+</blockquote>
+</li>
+<li><p>asyncio，aiohttp之间的联系？（异步编程）</p>
+<blockquote>
+<p>asyncio是一个异步IO库，aiohttp就是基于asyncio的异步HTTP框架（支持客户端&#x2F;服务端）</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="代码设计"><a href="#代码设计" class="headerlink" title="代码设计"></a>代码设计</h2><p>Python提供了基本的socket模块：</p>
+<ol>
+<li>socket模块；提供了标准的BSD Sockets API；</li>
+<li>socketserver模块：提供了服务器中心类，简化服务器的开发；</li>
+</ol>
+<h3 id="TCP-Socket服务端"><a href="#TCP-Socket服务端" class="headerlink" title="TCP Socket服务端"></a>TCP Socket服务端</h3><p><strong>socket模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">from</span> socket <span class="keyword">import</span> socket, AF_INET, SOCK_STREAM</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">echo_handler</span>(<span class="params">sock ,address</span>):</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&quot;Get Connection from address:&quot;</span>, address)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">		response = sock.recv(<span class="number">8192</span>)</span><br><span class="line">		<span class="keyword">if</span> <span class="keyword">not</span> response:</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		<span class="built_in">print</span>(<span class="string">f&quot;Got <span class="subst">&#123;response&#125;</span>&quot;</span>)</span><br><span class="line">		sock.sendall(response)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">echo_server</span>(<span class="params">address, back_log=<span class="number">5</span></span>):</span><br><span class="line">	sock = socket(AF_INET, SOCK_STREAM)</span><br><span class="line">	sock.bind(address)</span><br><span class="line">	sock.listen(back_log)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">		sock_client, address = sock.accept()</span><br><span class="line">		echo_handler(sock_client, address)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">	echo_server((<span class="string">&#x27;localhost&#x27;</span>, <span class="number">5000</span>))</span><br></pre></td></tr></table></figure>
+
+<p>代码详解：</p>
+<ul>
+<li>创建一个基于IPV4和TCP协议的Socket，这里AF_INET指的是使用IPV4协议，SOCK_STREAM指定使用面向流的TCP协议，绑定监听端口，设置等待连接的最大数量</li>
+<li>创建一个永久循环，获取客户端请求的连接，accept()会等待并返回一个客户端的连接；</li>
+<li>连接建立后，等待客户端数据，接受完客户端数据，然后返回数据给客户端，最后关闭连接</li>
+</ul>
+<p>存在的问题：当出现多个客户端请求时，由于是单个线程会发生阻塞的情况，所以如果需要多线程处理多个客户端请求，可以这样改；</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> threading <span class="keyword">import</span> Thread</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        client_sock, address = sock.accept()</span><br><span class="line">        thread = Thread(target=echo_handler, args=(client_sock, address))</span><br><span class="line">        thread.start()</span><br></pre></td></tr></table></figure>
+<p>这样的话，就会在每个客户端请求的时候，生成一个子线程然后处理请求；<br>（但是存在一个问题：当突然大量请求连接，消耗系统资源达到上限后，很可能造成程序无法处理后续请求。）</p>
+<p><strong>socketserver模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> socketserver <span class="keyword">import</span> BaseRequestHandler, TCPServer</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">EchoHandler</span>(<span class="title class_ inherited__">BaseRequestHandler</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">handle</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Got Connection From: %s&quot;</span> % <span class="built_in">str</span>(self.client_address))</span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            msg = self.request.recv(<span class="number">8192</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> msg:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            self.request.send(msg)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    server = TCPServer((<span class="string">&quot;&quot;</span>, <span class="number">5000</span>), EchoHandler)</span><br><span class="line">    server.serve_forever()</span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line">```python</span><br><span class="line"><span class="keyword">from</span> socketserver <span class="keyword">import</span> StreamRequestHandler, TCPServer, ThreadingTCPServer</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">EchoHandler</span>(<span class="title class_ inherited__">StreamRequestHandler</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">handle</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Got Connection Address: %s&quot;</span> % <span class="built_in">str</span>(self.client_address))</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> self.rfile:</span><br><span class="line">            <span class="built_in">print</span>(line)</span><br><span class="line">            self.wfile.write(<span class="built_in">bytes</span>(<span class="string">&quot;hello &#123;&#125;&quot;</span>.<span class="built_in">format</span>(line.decode(<span class="string">&#x27;utf-8&#x27;</span>)).encode(<span class="string">&#x27;utf-8&#x27;</span>)))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    serv = ThreadingTCPServer((<span class="string">&quot;&quot;</span>, <span class="number">5000</span>), EchoHandler)</span><br><span class="line">    serv.serve_forever()</span><br></pre></td></tr></table></figure>
+
+<p>代码详解：</p>
+<ul>
+<li>处理多个客户端，初始化一个ThreadingTCPServer实例，ThreadingTCPServer处理客户端的连接，会为每个客户端创建一个线程进行交互。</li>
+<li>设置绑定的IP地址和端口，以及处理类；</li>
+<li>使用StreamRequestHandler（使用流的请求处理程序类，类似file-like对象，提供标准文件接口简化通信过程），重写里面的handle方法，获取请求数据，返回数据给客户端；</li>
+</ul>
+<h3 id="TCP-Socket客户端"><a href="#TCP-Socket客户端" class="headerlink" title="TCP Socket客户端"></a>TCP Socket客户端</h3><p><strong>socket模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">from</span> socket <span class="keyword">import</span> socket, AF_INET, SOCK_STREAM</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">request_handler</span>():</span><br><span class="line">	start_time = time.time()</span><br><span class="line">	sock_client = socket(AF_INET, SOCK_STREAM)</span><br><span class="line">	sock_client.connect((<span class="string">&#x27;localhost&#x27;</span>, <span class="number">5000</span>))</span><br><span class="line">	</span><br><span class="line">	book_content = <span class="string">&quot;&quot;</span></span><br><span class="line">	<span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;send_books.txt&quot;</span>, <span class="string">&quot;r&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">		book_content = f.read()</span><br><span class="line">	</span><br><span class="line">	content_list = book_content.split(<span class="string">&quot;\n&quot;</span>)</span><br><span class="line">	<span class="keyword">for</span> content <span class="keyword">in</span> content_list:</span><br><span class="line">		<span class="keyword">if</span> content:</span><br><span class="line">			sock_client.send((content).encode())</span><br><span class="line">			time.sleep(<span class="number">2</span>)</span><br><span class="line">			response = sock_client.recv(<span class="number">8192</span>)</span><br><span class="line">			<span class="built_in">print</span>(response)</span><br><span class="line"></span><br><span class="line">	end_time = time.time()</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&quot;总共耗时:&quot;</span>, end_time-start_time)</span><br><span class="line"></span><br><span class="line">		</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">	request_handler()</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="UDP-Socket"><a href="#UDP-Socket" class="headerlink" title="UDP Socket"></a>UDP Socket</h3><p><strong>Socket模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> socket <span class="keyword">import</span> socket, AF_INET, SOCK_DGRAM</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">time_server</span>(<span class="params">address</span>):</span><br><span class="line">    sock = socket(AF_INET, SOCK_DGRAM)</span><br><span class="line">    sock.bind(address)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        msg, addr = sock.recvfrom(<span class="number">8192</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;Get message from&#x27;</span>, addr)</span><br><span class="line">        resp = time.ctime()</span><br><span class="line">        sock.sendto(resp.encode(<span class="string">&#x27;ascii&#x27;</span>), addr)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    time_server((<span class="string">&#x27;&#x27;</span>, <span class="number">5000</span>))</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>代码不详解，和之前的差不多，注意不同的协议就完事了</p>
+</blockquote>
+<p>客户端测试：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> socket <span class="keyword">import</span> socket, AF_INET, SOCK_DGRAM</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    s = socket(AF_INET, SOCK_DGRAM)</span><br><span class="line">    s.sendto(<span class="string">b&#x27;hello&#x27;</span>, (<span class="string">&#x27;localhost&#x27;</span>, <span class="number">5000</span>))</span><br><span class="line">    text = s.recvfrom(<span class="number">8192</span>)</span><br><span class="line">    <span class="built_in">print</span>(text)</span><br></pre></td></tr></table></figure>
+
+<p><strong>socketserver模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> socketserver <span class="keyword">import</span> BaseRequestHandler, UDPServer</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TimeHandler</span>(<span class="title class_ inherited__">BaseRequestHandler</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">handle</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Got Connection %s&quot;</span>.<span class="built_in">format</span>(<span class="built_in">str</span>(self.client_address)))</span><br><span class="line">        data = self.request[<span class="number">0</span>]</span><br><span class="line">        <span class="built_in">print</span>(data)</span><br><span class="line">        msg, sock = self.request</span><br><span class="line">        <span class="built_in">print</span>(msg)</span><br><span class="line">        data = time.ctime()</span><br><span class="line">        sock.sendto(data.encode(<span class="string">&#x27;ascii&#x27;</span>), self.client_address)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    u = UDPServer((<span class="string">&quot;localhost&quot;</span>, <span class="number">9999</span>), TimeHandler)</span><br><span class="line">    u.serve_forever()</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>代码不在赘述，如果需要多线程处理并发操作可以使用ThreadingUDPServer</p>
+</blockquote>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><blockquote>
+<p>关于本篇介绍Python Socket编程，大都是皮毛，只是谈到了Python实际处理socket的几个模块，<br>关于socket底层方面的知识并未提及，先了解个大概，从实际使用方面出发，在实际使用过程中结合<br>计算机网络知识，能够理解socket在整个TCP&#x2F;IP协议栈中的作用。<br><br>socket和socketserver模块都可以用来编写网络程序，不同的是socketserver省事很多，你可以专注<br>业务逻辑，不用去理会socket的各种细节，包括不限于多线程&#x2F;多进程，接收数据，发送数据，通信过程。<br></p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Socket</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python命令行模块（sys.argv,argparse,click）</title>
+    <url>/2020/09/12/Python%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%A8%A1%E5%9D%97%EF%BC%88sys.argv,argparse,click%EF%BC%89/</url>
+    <content><![CDATA[<blockquote>
+<p>Python作为一门脚本语言，经常作为脚本接受命令行传入参数，Python接受命令行参数大概有三种方式。因为在日常工作场景会经常使用到，这里对这几种方式进行总结。</p>
+</blockquote>
+<h2 id="命令行参数模块"><a href="#命令行参数模块" class="headerlink" title="命令行参数模块"></a>命令行参数模块</h2><p>这里命令行参数模块平时工作中用到最多就是这三种模块：sys.argv,argparse,click。sys.argv和argparse都是内置模块，click则是第三方模块。</p>
+<h3 id="sys-argv模块（内置模块）"><a href="#sys-argv模块（内置模块）" class="headerlink" title="sys.argv模块（内置模块）"></a>sys.argv模块（内置模块）</h3><p>先看一个简单的示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    file_name = sys.argv[<span class="number">0</span>]</span><br><span class="line">    name =  sys.argv[<span class="number">1</span>]</span><br><span class="line">    age = sys.argv[<span class="number">2</span>]</span><br><span class="line">    sex = sys.argv[<span class="number">3</span>]</span><br><span class="line">    other = sys.argv[<span class="number">4</span>:]</span><br><span class="line">    hello(name, age, sex, *other)</span><br></pre></td></tr></table></figure>
+<p>调用脚本：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13 man nibi ss</span><br></pre></td></tr></table></figure>
+<p>脚本输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line">nibi</span><br><span class="line">ss</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>sys.argv模块不难理解，命令参数作为列表传入Python脚本中，argv[0]是脚本的名字，argv[1]则是第一个参数，后面以此类推。所以在脚本中只需要提取列表中的参数即可使用。上面演示的是正确调用Python脚本的情况，下面则是调用失败的情况。</p>
+</blockquote>
+<p>错误调用脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python test_sysargv.py zhangsan 13</span><br></pre></td></tr></table></figure>
+<p>错误输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;test_sysargv.py&quot;, line 16, in &lt;module&gt;</span><br><span class="line">    sex = sys.argv[3]</span><br><span class="line">IndexError: list index out of range</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>关于错误也很好理解，经典的列表索引超出范围，之所列表索引超出范围，没有传入足够的参数。当然你可以使用try…except捕获错误。但是这种做法太过死板，因为在命令行中必须按照脚本规定的参数顺序输入参数，所以这种模块使用一般是针对一些需要的参数比较少并且固定的脚本。</p>
+</blockquote>
+<h3 id="argparse模块（内置模块）"><a href="#argparse模块（内置模块）" class="headerlink" title="argparse模块（内置模块）"></a>argparse模块（内置模块）</h3><p>同样的先看一个简单的示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"></span><br><span class="line">parser = argparse.ArgumentParser(description=<span class="string">&#x27;Test for argparse module.&#x27;</span>)   <span class="comment"># 构建命令参数实例</span></span><br><span class="line">parser.add_argument(<span class="string">&quot;--name&quot;</span>, <span class="string">&quot;-n&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--age&quot;</span>, <span class="string">&quot;-a&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--sex&quot;</span>, <span class="string">&quot;-s&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute: 非必要属性&quot;</span>)</span><br><span class="line">parser.add_argument(<span class="string">&quot;--type&quot;</span>, <span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 非必要属性&quot;</span>, required=<span class="literal">True</span>)</span><br><span class="line">args = parser.parse_args()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=args.<span class="built_in">type</span>))</span><br><span class="line">    <span class="keyword">if</span> args.name <span class="keyword">and</span> args.age <span class="keyword">and</span> args.sex:</span><br><span class="line">        hello(args.name, args.age, args.sex)</span><br></pre></td></tr></table></figure>
+<p>执行脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -t json -n zhangsan -a 13 -s man</span><br></pre></td></tr></table></figure>
+<p>脚本成功输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: json</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>关于argparse模块的使用，首先需要生成一个命令行参数的实例，然后通过对这个对象添加属性，添加需要从命令行获取的参数，包括哪些是必要参数（required&#x3D;True），哪些非必要参数，同时也可以对每个参数进行帮助提示（help&#x3D;””）。</p>
+</blockquote>
+<blockquote>
+<p>而上面示例中分别添加了四个属性，–name和-n同时可以再命令行中使用，都表示了参数name。ArgumentParser通过parse_ags()方法解析参数，检查命令行，将每个参数转换为适当的类型，所以在脚本中同时也可以使用args.n和args.name获取到参数，相对应的如果没有传入该参数，脚本中则获取到None。</p>
+</blockquote>
+<p>查看命令行参数之后脚本的帮助提示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 test_argparse.py -h</span><br><span class="line">usage: test_argparse.py [-h] [--name NAME] [--age AGE] [--sex SEX] --type TYPE</span><br><span class="line"></span><br><span class="line">Test for argparse module.</span><br><span class="line"></span><br><span class="line">optional arguments:</span><br><span class="line">  -h, --help            show this help message and exit</span><br><span class="line">  --name NAME, -n NAME  name attribute: 非必要属性</span><br><span class="line">  --age AGE, -a AGE     age attribute: 非必要属性</span><br><span class="line">  --sex SEX, -s SEX     sex attribute: 非必要属性</span><br><span class="line">  --type TYPE, -t TYPE  type attribute: 非必要属性</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>另外在添加命令行参数的属性中，还有更多的设置，多余的可以参考Python官方文档，里面都有详细的标注，这里就不展开来讲，总结的就是关于argparse模块的使用非常简便，同时十分人性化，也很符合日常工作的需要。</p>
+</blockquote>
+<h3 id="click模块"><a href="#click模块" class="headerlink" title="click模块"></a>click模块</h3><p>先开一个简单的使用示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> click</span><br><span class="line"></span><br><span class="line"><span class="meta">@click.command()</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--name&quot;</span>, default=<span class="string">&quot;zhangsan&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;name attribute: 非必要属性&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--age&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;age attribute&quot;</span>, <span class="built_in">type</span>=<span class="built_in">int</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;--sex&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;sex attribute&quot;</span></span>)</span></span><br><span class="line"><span class="meta">@click.option(<span class="params"><span class="string">&quot;-t&quot;</span>, <span class="built_in">help</span>=<span class="string">&quot;type attribute: 必要属性&quot;</span>, required=<span class="literal">True</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">t, name, age, sex, *args</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Format of transfer file: &#123;type&#125;&quot;</span>.<span class="built_in">format</span>(<span class="built_in">type</span>=t))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Hello, My name is &#123;name&#125;.&quot;</span>.<span class="built_in">format</span>(name=name))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m &#123;age&#125; years old.&quot;</span>.<span class="built_in">format</span>(age=age))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;I&#x27;m a &#123;sex&#125;&quot;</span>.<span class="built_in">format</span>(sex=sex))</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Other word:\n&#123;args&#125;&quot;</span>.<span class="built_in">format</span>(args=<span class="string">&quot;\n&quot;</span>.join(args)))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    hello()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>执行脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">python3 test_click.py -t 1 --age 13 --sex man</span><br></pre></td></tr></table></figure>
+<p>脚本输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Format of transfer file: 1</span><br><span class="line">Hello, My name is zhangsan.</span><br><span class="line">I&#x27;m 13 years old.</span><br><span class="line">I&#x27;m a man</span><br><span class="line">Other word:</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>click模块是Flask团队优秀的开源项目，使用方法和argparse模块很相似，同样为命令行封装了大量的方法，使用者只需要专注代码功能的实现。<br> click模块和argparse模块不同的地方就是，click模块使用装饰器的方式给函数添加命令行属性，关于装饰器简单来讲就是能够在不修改原有函数的基础上添加功能。虽然使用装饰器但是添加命令行属性的方式和argparse模块很相似，包括options中常用的参数含义也有很多类似的地方。值得注意的就是一开始需要通过command()将函数成为命令行的接口。<br> 关于的click模块的就大致讲到这里，其余有兴趣的可以再去了解一下。</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>关于这三个模块值得注意的是，尽量贴近自己应用场景去选择，真正的做到自己能够方便使用才是你去使用这些模块的原因。</p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Argv</tag>
+        <tag>argparse</tag>
+        <tag>cli</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python定时任务利器—Apscheduler</title>
+    <url>/2020/12/07/Python%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E5%88%A9%E5%99%A8%E2%80%94Apscheduler/</url>
+    <content><![CDATA[<h2 id="导语"><a href="#导语" class="headerlink" title="导语"></a>导语</h2><p>在工作场景遇到了这么一个场景，就是需要定期去执行一个缓存接口，用于同步设备配置。首先想到的就是Linux上的crontab，可以定期，或者间隔一段时间去执行任务。但是如果你想要把这个定时任务作为一个模块集成到Python项目中，或者想持久化任务，显然crontab不太适用。Python的APScheduler模块能够很好的解决此类问题，所以专门写这篇文章，从简单入门开始记录关于APScheduler最基础的使用场景，以及解决持久化任务的问题，最后结合其他框架深层次定制定时任务模块这几个点入手。</p>
+<h2 id="简单介绍"><a href="#简单介绍" class="headerlink" title="简单介绍"></a>简单介绍</h2><p>先简单介绍一下Apscheduler模块包含的四种组件：</p>
+<ul>
+<li>Trigger触发器</li>
+<li>Job作业</li>
+<li>Excutor执行器</li>
+<li>Scheduler调度器</li>
+</ul>
+<p>大概了解了Apscheduler包含的几种概念，现在先来看一下一个简单的示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> apscheduler.schedulers.blocking <span class="keyword">import</span> BlockingScheduler</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>():</span><br><span class="line">    <span class="built_in">print</span>(time.strftime(<span class="string">&quot;%c&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    scheduler = BlockingScheduler()</span><br><span class="line">    scheduler.add_job(hello, <span class="string">&#x27;interval&#x27;</span>, seconds=<span class="number">5</span>)</span><br><span class="line">    scheduler.start()</span><br></pre></td></tr></table></figure>
+<p>示例的输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Thu Dec  3 16:01:20 2020</span><br><span class="line">Thu Dec  3 16:01:25 2020</span><br><span class="line">Thu Dec  3 16:01:30 2020</span><br><span class="line">Thu Dec  3 16:01:35 2020</span><br><span class="line">Thu Dec  3 16:01:40 2020</span><br><span class="line">..........</span><br></pre></td></tr></table></figure>
+<p>这个简单的示例，我们用上面提到几种组件分析一下运行逻辑：</p>
+<ul>
+<li>首先是Scheduler调度器，这个示例使用的BlockingScheduler调度器，在官方文档中的解释是，BlockingScheduler适合当你的这个定时任务程序是唯一运行的程序；换言之，则是BlockingScheduler调度器是一个阻塞调度器，当程序运行这种调度器，进程则会阻塞，无法执行其他操作；</li>
+<li>其次是Job作业和触发器，这两个放在一起讲是因为，在定义作业的时候，你就需要选择一个触发器，这里选择的是interval触发器，这种触发器会以固定时间间隔运行作业。换言之，为调度器添加一个hello的工作，并以每5秒的时间间隔执行任务。</li>
+<li>最后就是执行器，默认是ThreadPoolExcutor执行器，他们将任务中可调用对象交给线程池执行操作，等完成操作后，执行器会通知调度程序。</li>
+</ul>
+<p>内置的三种Trigger触发器类型：</p>
+<ul>
+<li>date:特定时间仅运行一次作业</li>
+<li>interval: 固定的时间间隔内运行一次作业</li>
+<li>cron: 在一天内特定的时间定期运行作业</li>
+</ul>
+<p>常见的Scheduler调度器:</p>
+<ul>
+<li>BlockingScheduler: 调度程序是流程中唯一运行的东西</li>
+<li>BackgroundScheduler: 调度程序在应用程序内部的后台运行时使用</li>
+<li>AsyncIOScheduler: 应用程序使用asyncio模块</li>
+<li>GeventScheduler: 应用程序使用gevent模块</li>
+<li>TornadoScheduler：构建Tornado应用程序时使用</li>
+<li>TwistedScheduler: 构建Tornado应用程序时使用</li>
+<li>QtScheduler: 在构建QT应用程序时使用</li>
+</ul>
+<p>常见的JobStore：</p>
+<ul>
+<li>MemoryJobStore</li>
+<li>MongoDBJobStore</li>
+<li>SQLAlchemyJobStore</li>
+<li>RedisJobStore</li>
+</ul>
+<h2 id="进阶使用"><a href="#进阶使用" class="headerlink" title="进阶使用"></a>进阶使用</h2><p>通过上面一个简单的示例了解大概的工作流程，以及各个组件在整个流程中的作用，以下的示例是Flask Web框架结合使用Apscheduler定时器，定时执行任务。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask, Blueprint, request</span><br><span class="line"><span class="keyword">from</span> apscheduler.executors.pool <span class="keyword">import</span> ThreadPoolExecutor </span><br><span class="line"><span class="keyword">from</span> apscheduler.schedulers.background <span class="keyword">import</span> BackgroundScheduler</span><br><span class="line"><span class="keyword">from</span> apscheduler.jobstores.redis <span class="keyword">import</span> RedisJobStore</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line">executors = &#123;<span class="string">&quot;default&quot;</span>: ThreadPoolExecutor(<span class="number">5</span>)&#125;</span><br><span class="line">default_redis_jobstore = RedisJobStore(db=<span class="number">2</span>, </span><br><span class="line">        jobs_key=<span class="string">&quot;apschedulers.default_jobs&quot;</span>,</span><br><span class="line">        run_times_key=<span class="string">&quot;apschedulers.default_run_times&quot;</span>,</span><br><span class="line">        host = <span class="string">&#x27;127.0.0.1&#x27;</span>,</span><br><span class="line">        port = <span class="number">6379</span></span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">scheduler = BackgroundScheduler(executors=executors)</span><br><span class="line">scheduler.add_jobstore(default_redis_jobstore)</span><br><span class="line">scheduler.start()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">say_hello</span>():</span><br><span class="line">    <span class="built_in">print</span>(time.strftime(<span class="string">&quot;%c&quot;</span>))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/get_job&quot;</span>, methods=[<span class="string">&#x27;GET&#x27;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_job</span>():</span><br><span class="line">    <span class="keyword">if</span> scheduler.get_job(<span class="string">&quot;say_hello_test&quot;</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;YES&quot;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;NO&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/start_job&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">start_job</span>():</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> scheduler.get_job(<span class="string">&quot;say_hello_test&quot;</span>):</span><br><span class="line">        scheduler.add_job(say_hello, <span class="string">&quot;interval&quot;</span>, seconds=<span class="number">5</span>, <span class="built_in">id</span>=<span class="string">&quot;say_hello_test&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Start Scuessfully!&quot;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Started Failed&quot;</span></span><br><span class="line">   </span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&quot;/remove_job&quot;</span>, methods=[<span class="string">&quot;GET&quot;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">remove_job</span>():</span><br><span class="line">    <span class="keyword">if</span> scheduler.get_job(<span class="string">&quot;say_hello_test&quot;</span>):</span><br><span class="line">        scheduler.remove_job(<span class="string">&quot;say_hello_test&quot;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Delete Successfully!&quot;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Delete Failed&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    app.run(host=<span class="string">&quot;127.0.0.1&quot;</span>, port=<span class="number">8787</span>, debug=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>先分析Jobstore，这里使用的是RedisJobstore，将任务序列化存入到Redis数据库中。这里顺便提一下，为什么需要设置作业存储器，原因是当调度器程序崩溃时，仍然能够保留作业，当然选择什么作业存储器，可以根据具体的工作场景，目前主流的mysql，mongodb，redis，SQLite基本都支持;</li>
+<li>然后再看看Scheduler，这里使用的时BackgroundScheduler，因为这里要求调度程序不能阻塞flask程序的正常接收请求，所以选在BackgrounScheduler让它在开始执行任务时是在后台运行的，不会阻塞主线程;</li>
+<li>最后看看工作的逻辑，这里get_job获取作业的状态，查看作业是否存在，start_job则是先判断作业是否启动，然后再决定启动操作，remove_job则是停止作业。而这里的作业定义则是通过interval触发器，每五秒执行一次say_hello任务；</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>最后总结一下，首先你要设置一个作业存储器用于在调度程序崩溃重新恢复时，还能够在作业存储器中获取到作业继续执行；然后你需要设置一个执行器，这个根据作业的类型，比如时一个CPU密集型的任务，那就可以用进程池执行器，默认是用线程池执行器；最后创建配置调度器，启动调度，可以在启动前添加作业，也可以在启动后添加，删除，获取作业。(在这里需要明白的一点就是应用程序不会直接去操作作业存储器，作业或者执行器，而是调度器提供适当的接口来处理这些接口。)<br><br/>ApScheduler是一个不错的定时任务库，能够动态的添加删除，同时也支持不同的触发器类型，这也是它的优势，相反一些如果是静态任务，其实可以用如linux的crontab工具去做定时任务。有关这方面的记录还会持续更新，如果有什么问题，可以提出来，大家一起探讨。</p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Apscheduler</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>总结技术文章写作技巧</title>
+    <url>/2020/07/30/%E6%80%BB%E7%BB%93%E6%8A%80%E6%9C%AF%E6%96%87%E7%AB%A0%E5%86%99%E4%BD%9C%E6%8A%80%E5%B7%A7/</url>
+    <content><![CDATA[<h2 id="1、端正心态"><a href="#1、端正心态" class="headerlink" title="1、端正心态"></a>1、端正心态</h2><p>&nbsp; 对于写作不要产生恐惧，起点期望放低点，没有什么事情能一蹴而就，同时可以通过阅读其他的技术文章，模仿行文方式，不断重复练习，对比吸取相关长处，补足自己的缺点。</p>
+<h2 id="2、明确定位"><a href="#2、明确定位" class="headerlink" title="2、明确定位"></a>2、明确定位</h2><p>&nbsp;对于这篇文章需要给什么类型的读者看，需要怎样的技术背景，需要怎样的技术栈，以及相关的项目背景。明确了定位方便切入不同读者的阅读需求。</p>
+<h2 id="3、标题切入"><a href="#3、标题切入" class="headerlink" title="3、标题切入"></a>3、标题切入</h2><p>&nbsp; 对于文章的标题需要提供给读者一个很好的切入角度，整篇文章围绕着标题，起到文章的中心作用。</p>
+<h2 id="4、简介与大纲"><a href="#4、简介与大纲" class="headerlink" title="4、简介与大纲"></a>4、简介与大纲</h2><p>&nbsp;  针对不同的文章，如果对于一些小项目经验或者工具使用的分享，列提纲和简介能够给读者一目了然，在第一时间的情况下获取到需要的知识信息，简介中我一般喜欢写背景，即项目背景，或者技术背景，通过这些背景能够很好的把读者带到一个阅读环境。提纲的话就因人而异，如果仅仅是比较小型的分享，对于列提纲显得没那么重要。<br>&nbsp;  而针对大型的技术的分享，对于一些写到比较全的技术分享，就需要通过列提纲对自己的内容进行很好的归纳总结成每个点，同时提纲好处就是能够让读者随时从某个地方切入，省去一些自己知道的环节。</p>
+<h2 id="5、正文写作"><a href="#5、正文写作" class="headerlink" title="5、正文写作"></a>5、正文写作</h2><p>&nbsp; 通过提问和问答模式：能够让读者目的明确地进行阅读，同时让读者带着问题去阅读，就能更好的抓住文章的重点和逻辑，同时读者的阅读效果和阅读感受就会更加好。<br>&nbsp; 通过讲故事的方法：讲故事的话，一般是可以设定某个情节，让读者代入到该场景，通过叙事的模式和节奏，让读者更加容易接受专业知识。</p>
+<h2 id="6、额外"><a href="#6、额外" class="headerlink" title="6、额外"></a>6、额外</h2><ul>
+<li>通过合适的段落和句子，减轻读者阅读的压力；</li>
+<li>对于需要结合代码讲清楚专业知识，则需要将代码贴出来，并且在一些关键的代码中需要有清晰的注释；</li>
+<li>对于文章出现的Demo可以附加上demo的链接；</li>
+<li>如果对于一些比较专业的术语或者细节，可以通过类比形式解释清楚问题，如果文字描述不清楚可以选择配图的方式；</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ul>
+<li>取好标题，醒目突出中心</li>
+<li>图文并茂，适当配图说明</li>
+<li>篇幅适宜，不宜过短也避免冗长</li>
+<li>格式统一，基本排版规则需要遵守</li>
+<li>细节处理，错别字标点处理正确。</li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><blockquote>
+<p>参考文章：<a class="link"   href="http://news.51cto.com/art/201904/594736.htm" >http://news.51cto.com/art/201904/594736.htm<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>笔记</category>
+      </categories>
+      <tags>
+        <tag>笔记</tag>
+        <tag>写作</tag>
+        <tag>技术文章</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>明朝那些事儿</title>
+    <url>/2020/07/30/%E6%98%8E%E6%9C%9D%E9%82%A3%E4%BA%9B%E4%BA%8B/</url>
+    <content><![CDATA[<blockquote>
+<p>关于这个系列的丛书，掰掰手指头估计读了有三次遍了，都是在人生不同的阶段去阅读，或者懵懂，或者无聊，或者失意，每次隔段时间再次捧起这些书的时候，心中各种人物仿佛唤醒你脑中最深处的回忆。唤起那份第一次阅读时带来的惊喜，各种人物形形色色也顿时鲜明起来。<br>其实每每一口气读完整套书籍，胸中总有种不吐不快的感觉，就像如鲠在喉，慢慢顺着明朝建立起来时候缓缓地回忆那时候地一切，顿时起了一身的“鸡皮疙瘩”，历史总是默默无语，总是安静的看着这一切事情的发生，大浪淘进了无数的英雄豪杰，他们的归宿总是惊人的相似，之所以我想些这篇文章，真的是有感于里面的许多人物给我带来不同的感受，他们或狡诈，或阴险，或偏执、或聪明、或愚蠢、或可爱、或勇敢、或自负等等等，我只是想把我已经看完的书，看完的一段历史，重新在我的视角里 ，说说自己的看法。</p>
+</blockquote>
+<h2 id="朱元璋"><a href="#朱元璋" class="headerlink" title="朱元璋"></a>朱元璋</h2><p>要说自己最开始知道明朝有关的历史，第一个毋庸置疑的是明朝的开国皇帝朱元璋，对于我来说，在没了解这段历史时，单纯的感觉认为这是一个很”励志“的人，为什么呢？因为他出生卑微，却靠着自己独有的战略眼光以及用人智慧，一步步走向属于他的巅峰。属实”励志“，但当我对这位人物有了一定的历史了解之后，我又开始发觉这是一个极其复杂的人。比如经常有人说他天生英雄，其实他是实在走投无路，被人告密之后，还让自己朋友周德兴占了一卦，才觉得跟着造反的。造反的过程中刚开始也十分不顺利，但是你在过程中慢慢的就会发现到朱元璋的过人之处，过人的胸怀，对自己的战略眼光视角的自信，对事物本质的洞悉能力。<br>在他打败陈友谅、张士诚的时候，都能为他每次出色战略决定感慨，当然这些也少不了他手下那些骁勇善战的将士，以及足智多谋的谋士。在推翻元朝统治，建立大明之后，慢慢随着岁月的逝去，越来越多的老朋友离开了朱元璋的身边，这里面有很多都是为了自己后代能够统治安稳而解决掉。当他的马皇后最终离开了他的身边之后，他或许真的流泪了，那个在他坎坷流离的生命岁月中一直不放弃不抛弃的跟着他的女人走了，渐渐的也只剩给他一个人了。</p>
+<h2 id="朱棣"><a href="#朱棣" class="headerlink" title="朱棣"></a>朱棣</h2><p>朱棣可能是我在明朝中印象最深刻的一个皇帝，为什么呢？因为他可以说是一个双面皇帝，对自己敌人不择手段，宁杀错不放过，对自己的朋友，百姓都是关怀备至，一副仁君的模样。然后他本身就在军队中长大，练就了一身的指挥打仗的本领，在实战中也是经常出奇制胜。在最开始的时候，朱棣也是不太像造反的，毕竟这种一旦失败就要人头落地的买卖实在不划算，而身边的和尚姚广孝一直在劝说他造反，最后因为朱允炆听从黄子澄、齐泰的建议削藩，最终导致朱棣起兵造反。而让我铭记朱棣的名字，是因为朱棣一手建立了永乐盛世，万邦来朝的繁华景象。这背后是他数次北伐亲征，兢兢业业。以及派遣郑和下西洋传播和平理想的信念。他不是一个好人，但是一个好皇帝。</p>
+<h2 id="未完。。。"><a href="#未完。。。" class="headerlink" title="未完。。。"></a>未完。。。</h2><p>可能因为胸中的那团气突然散了，感觉有许多东西其实没有讲出来，但是仿佛这其中犹如一团乱麻，始终牵绕着我。朱元璋，李善忠，刘伯温，徐达，常遇春，汤和，马皇后，朱棣，朱允炆，黄子澄，齐泰，方孝孺，姚广孝，郑和，朱高煦，朱瞻基，杨士奇，杨荣，杨溥，于谦，朱祁镇…..，这些人仿佛是历史长河中一粒粒沙子，他们任何一个人只是历史选中的角色，但是任何一个却无法阻挡历史的脚步。</p>
+]]></content>
+      <categories>
+        <category>笔记</category>
+      </categories>
+      <tags>
+        <tag>笔记</tag>
+        <tag>写作</tag>
+        <tag>历史</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>浅析Python项目部署</title>
+    <url>/2020/12/15/%E6%B5%85%E6%9E%90Python%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2/</url>
+    <content><![CDATA[<h2 id="基础理论"><a href="#基础理论" class="headerlink" title="基础理论"></a>基础理论</h2><h3 id="关于Web服务器和应用服务器"><a href="#关于Web服务器和应用服务器" class="headerlink" title="关于Web服务器和应用服务器"></a>关于Web服务器和应用服务器</h3><p>基本概念：</p>
+<ul>
+<li>Web服务器主要功能就是存储、处理、传递网页，客户端和服务器之间基于HTTP协议进行通信。</li>
+<li>应用服务器主要是处理动态请求，调用相应的对象完成对请求的处理，返回响应的结果。</li>
+</ul>
+<p>两者之间的区别：</p>
+<ul>
+<li>Web服务器主要是以HTTP为核心，WEB UI为向导的应用，处理一些静态请求。</li>
+<li>应用服务器虽然也支持HTTP协议，但应用服务器可以通过很多协议为应用程序提供商业逻辑。</li>
+</ul>
+<h3 id="Python项目部署架构"><a href="#Python项目部署架构" class="headerlink" title="Python项目部署架构"></a>Python项目部署架构</h3><p>在我们平时搭建一个Python Web项目时，比如Django框架的项目，这时候常见的服务端架构：</p>
+<ol>
+<li>Nginx服务器作为代理服务器，代理处理静态资源（js,css,图片)请求，以及动态请求（增删改查）转发以及返回处理结果。</li>
+<li>uWSGI服务器负责接受Nginx服务器，处理过后转发给Django应用，接受Django应用处理返回的信息，在转发给nginx</li>
+<li>Django应用从uWSGI服务器接收请求，调用相应的业务逻辑，处理数据渲染相应的页面并且返回给uWSGI服务器。</li>
+</ol>
+<h3 id="关于cgi、wsgi、uwsgi、http协议"><a href="#关于cgi、wsgi、uwsgi、http协议" class="headerlink" title="关于cgi、wsgi、uwsgi、http协议"></a>关于cgi、wsgi、uwsgi、http协议</h3><p>接下来针对上文提到Django项目部署架构，聊聊这几个协议在这过程中的作用：</p>
+<ul>
+<li>http协议：客户端程序和Nginx服务器通信就是基于http协议，而Nginx服务器作为一个代理服务器，会根据HTTP请求返回静态资源还是转发动态请求。</li>
+<li>cgi协议：cgi协议是外部应用程序和Web服务器之间的接口标准，简而言之，就是规定如何让一个程序与Web服务器程序之间通信。</li>
+<li>wsgi协议：基于现存的CGI标准设计，一个Python web框架编写的应用程序和Web服务器之间通信的规范。</li>
+<li>uwsgi：uWSGI服务器独有的协议，用于uWSGI服务器和其他Web服务器之间的数据通信</li>
+</ul>
+<h3 id="关于cgi、fastcgi、php-fpm、FastCGI-额外"><a href="#关于cgi、fastcgi、php-fpm、FastCGI-额外" class="headerlink" title="关于cgi、fastcgi、php-fpm、FastCGI(额外)"></a>关于cgi、fastcgi、php-fpm、FastCGI(额外)</h3><ul>
+<li>CGI：是 Web Server 与 Web Application 之间数据交换的一种协议。</li>
+<li>FastCGI：同 CGI，是一种通信协议，但比 CGI 在效率上做了一些优化。同样，SCGI 协议与 FastCGI 类似。</li>
+<li>PHP-CGI：是 PHP （Web Application）对 Web Server 提供的 CGI 协议的接口程序。</li>
+<li>PHP-FPM：是 PHP（Web Application）对 Web Server 提供的 FastCGI 协议的接口程序，额外还提供了相对智能一些任务管理。</li>
+</ul>
+<h3 id="关于uWSGI、Nginx服务器"><a href="#关于uWSGI、Nginx服务器" class="headerlink" title="关于uWSGI、Nginx服务器"></a>关于uWSGI、Nginx服务器</h3><p>简单来讲，uWSGI也是一个Web服务器，他虽然同时实现了http、uwsgi、wsgi协议,但是更多被作为应用服务器和应用程序之间进行通信。<br>那么这里就有个疑问了，为什么uWSGI都能直接处理http请求了，还需要Nginx服务器？这样处理有几点原因：</p>
+<ul>
+<li>首先Nginx服务器在这过程中属于代理服务器的角色，每当一个http请求进来，就需要经过Nginx服务器，而Nginx服务器的优势就在于异步非阻塞的网络模型，它能够在单线程的情况下处理大量的请求，针对处理静态资源请求；而对于动态请求，能够通过缓存的功能，并且配合CDN进行优化，这样能够极大降低系统的负载，降低客户端响应时间。</li>
+<li>其次，Nginx服务器能够进行负载均衡，启用多个后端服务器，通过Nginx对HTTP请求进行分配，这样能够极大优化架构的效率，提高处理的性能。</li>
+<li>最后，Nginx有很多模块支持一些比如白名单，黑名单功能，并且配合keepalive实现高可用的架构.<br>总而言之，Nginx服务器在处理http请求上，都有着uWSGI没有的优势，所以在日常部署环境中，经常会使用到Nginx+uWSGI。</li>
+</ul>
+<h2 id="uWSGI"><a href="#uWSGI" class="headerlink" title="uWSGI"></a>uWSGI</h2><h3 id="安装部署"><a href="#安装部署" class="headerlink" title="安装部署"></a>安装部署</h3><p>uWSGI有两种安装方式，一种是通过pip安装，一种是通过源码安装。这里就简单介绍pip安装方式，源码安装有兴趣可以私下自己了解。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip install uwsgi</span><br></pre></td></tr></table></figure>
+
+<h3 id="相关文件"><a href="#相关文件" class="headerlink" title="相关文件"></a>相关文件</h3><p>uWSGI服务器在启动的过程中主要涉及到以下这几个文件，其中uwsgi.sock还会涉及到Nginx相关部署的问题，在Nginx配置的时候回继续展开讲。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(venv) [root@mbb-48 uwsgi]# tree .</span><br><span class="line">.</span><br><span class="line">|-- uwsgi.ini       # uwsgi配置文件</span><br><span class="line">|-- uwsgi.log       # uwsgi日志文件</span><br><span class="line">|-- uwsgi.pid       # uwsgi运行进程pid</span><br><span class="line">|-- uwsgi.sock      # uwsgi socket</span><br><span class="line">`-- uwsgi.status    # uwsgi状态文件</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置示例"><a href="#配置示例" class="headerlink" title="配置示例"></a>配置示例</h3><p>以下配置是自己一个项目中用到的，其中的配置参数都是比较常见通用。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[uwsgi]</span><br><span class="line">chdir=/data/Novel/novel_test</span><br><span class="line">module=novel_test.wsgi:application</span><br><span class="line">home=/data/Novel/venv</span><br><span class="line">static-map=/static=/data/Novel/novel_test/static</span><br><span class="line">threads=8</span><br><span class="line">http=0.0.0.0:23606</span><br><span class="line">master=true</span><br><span class="line">vacuum=true</span><br><span class="line">thunder-lock=true</span><br><span class="line">uid=root</span><br><span class="line">gid=root</span><br><span class="line">harakiri=30</span><br><span class="line">post-buffering=4096</span><br><span class="line">socket=%(chdir)/uwsgi/uwsgi.sock</span><br><span class="line">stats=%(chdir)/uwsgi/uwsgi.status</span><br><span class="line">pidfile=%(chdir)/uwsgi/uwsgi.pid</span><br><span class="line">daemonize=%(chdir)/uwsgi/uwsgi.log</span><br></pre></td></tr></table></figure>
+<h4 id="配置解析"><a href="#配置解析" class="headerlink" title="配置解析"></a>配置解析</h4><ul>
+<li>chdir: 定义项目的目录</li>
+<li>module: 要使用的 WSGI 模块，不同的Python web框架中使用方式也不太一样。</li>
+<li>home: 指定Python执行环境，这个参数针对有不同Python运行环境，比如virtualenv创建独立Python环境的情况。</li>
+<li>static-map: 映射静态目录</li>
+<li>threads: 线程数量</li>
+<li>http: 指定启动地址和端口</li>
+<li>master: 启用主进程</li>
+<li>vacuum: 退出时，清理产生的中间文件（sock,pid,stats)</li>
+<li>thunder-lock: 序列化接收的内容</li>
+<li>uid:  指定启动用户</li>
+<li>gid:  指定启动组</li>
+<li>harakiri: 设置服务器响应时间</li>
+<li>post-buffering: 启用缓冲</li>
+<li>socket:   socket文件存放路径</li>
+<li>stats：   stats文件存放路径</li>
+<li>pidfile:  pid文件存放路径</li>
+<li>daemonize:    日志文件输出文件路径</li>
+</ul>
+<h4 id="额外配置"><a href="#额外配置" class="headerlink" title="额外配置"></a>额外配置</h4><ul>
+<li>processes: 进程数量</li>
+<li>buffer-size:  设置缓冲大小</li>
+<li>listen:   设置监听队列大小（默认100）</li>
+<li>max-requests: 每个工作进程请求书的最高上限</li>
+<li>procname-prefix-spaced:   工作进程的前缀名</li>
+<li>wsgi-file: 指定加载WSGI文件</li>
+</ul>
+<h3 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h3><p>上面介绍了相关常用的配置参数，当设置uWSGI参数后，需要启动指定配置文件，以及有关暂停，重启的动作。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">uwsgi --ini uwsgi.ini   # 启动uWSGI</span><br><span class="line">uwsgi --stop uwsgi.pid  # 暂停uWSGI</span><br><span class="line">uwsgi --reload uwsgi.pid    # 重启uWSGI</span><br></pre></td></tr></table></figure>
+
+<h3 id="服务监控"><a href="#服务监控" class="headerlink" title="服务监控"></a>服务监控</h3><p>uWSGI之一Stats服务器机制，它能将uWSGI状态作为一个JSON对象导出一个socket中，只需要像我们前面配置uWSGI配置文件一样，添加stats选项，跟着一个有效的socket地址接口。<br><br>当你配置完毕后，就可以通过客户端连接到指定的socket地址，将会获得一个包含uWSGI内部统计数据的JSON对象。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">uwsgi --connect-and-read uwsgi.status</span><br></pre></td></tr></table></figure>
+<p>执行完这个命令后，读取的返回的结果是一个json字符串，字符串中包括每个线程的状态，整个应用的负载，版本，监听队列等详细的信息。</p>
+<h4 id="uwsgitop查看实时状态"><a href="#uwsgitop查看实时状态" class="headerlink" title="uwsgitop查看实时状态"></a>uwsgitop查看实时状态</h4><p>uwsgitop是一个开源的实时监控uWSGI服务器状态的工具，安装也十分简单：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip install uwsgitop</span><br></pre></td></tr></table></figure>
+<p>具体uwsgitop像一个top命令，监听应用程序并且使用socket地址进行调用，查看进程运行状态，运行详细信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">uwsgitop uwsgi/uwsgi.status</span><br><span class="line">uwsgi-2.0.19.1 - Sun Sep 20 15:58:48 2020 - req: 6 - RPS: 0 - lq: 0 - tx: 67.6K</span><br><span class="line">node: mbb-48 - cwd: /data/Novel/novel_test - uid: 0 - gid: 0 - masterpid: 15109</span><br><span class="line"> WID    %       PID     REQ     RPS     EXC     SIG     STATUS  AVG     RSS     VSZ     TX      ReSpwn  HC      RunT    LastSpwn</span><br><span class="line"> 1	100.0   15144   6	0	0	0	idle    15ms    0	0	67.6K   1	0	125.449 15:48:08</span><br><span class="line">  :2    16.7    -	1	0	-	-	idle    -	-	-	-	-</span><br><span class="line">  :3    16.7    -	1	0	-	-	idle    -	-	-	-	-</span><br><span class="line">  :0    33.3    -	2	0	-	-	idle    -	-	-	-	-</span><br><span class="line">  :1    33.3    -	2	0	-	-	idle    -	-	-	-	-</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>具体有兴趣的同学可以参考github地址：</p>
+<blockquote>
+<p><a class="link"   href="https://github.com/xrmx/uwsgitop" >https://github.com/xrmx/uwsgitop<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>关于uWSGI服务器相关使用就总结到这里，因为在平时工作中会经常接触到，但是由于没有应用到一些高并发的场景，对于uwsgi调优方面没有多少经验，等待以后遇到此类问题再继续总结性能调优方面的问题。同时有关Nginx方面的配置留到下一篇文章继续讲，未完待续。。。。。</p>
+<h3 id="参考文章："><a href="#参考文章：" class="headerlink" title="参考文章："></a>参考文章：</h3><blockquote>
+<p><a class="link"   href="https://uwsgi-docs-zh.readthedocs.io/zh_CN/latest/StatsServer.html" >https://uwsgi-docs-zh.readthedocs.io/zh_CN/latest/StatsServer.html<i class="fas fa-external-link-alt"></i></a> <br><br><a class="link"   href="https://uwsgi-docs.readthedocs.io/en/latest/Options.html#harakiri" >https://uwsgi-docs.readthedocs.io/en/latest/Options.html#harakiri<i class="fas fa-external-link-alt"></i></a> <br><br><a class="link"   href="https://www.jianshu.com/p/c3b13b5ad3d7" >https://www.jianshu.com/p/c3b13b5ad3d7<i class="fas fa-external-link-alt"></i></a> <br><br><a class="link"   href="https://docs.djangoproject.com/zh-hans/2.2/howto/deployment/wsgi/uwsgi/" >https://docs.djangoproject.com/zh-hans/2.2/howto/deployment/wsgi/uwsgi/<i class="fas fa-external-link-alt"></i></a> <br><br><a class="link"   href="https://blog.51cto.com/mbb97/2151933" >https://blog.51cto.com/mbb97/2151933<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Web开发</tag>
+        <tag>项目部署</tag>
+      </tags>
+  </entry>
+</search>

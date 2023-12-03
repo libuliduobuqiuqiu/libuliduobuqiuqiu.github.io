@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="linshukai">
+    
+    <title>
+        
+            Python Socket编程 |
+        
+        LINSHUKAI&#39;S BLOG
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    
+        <link rel="shortcut icon" href="/images/lsk_favicon.png">
+    
+    
+<link rel="stylesheet" href="/font/css/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/regular.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/solid.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/brands.min.css">
+
+    
+    <script class="keep-theme-configurations">
+    const KEEP = window.KEEP || {}
+    KEEP.hexo_config = {"hostname":"example.com","root":"/","language":"zh-CN","path":"search.xml"}
+    KEEP.theme_config = {"toc":{"enable":true,"number":true,"expand_all":true,"init_open":true},"style":{"primary_color":"#0066cc","logo":"/images/lsk_logo.png","favicon":"/images/lsk_favicon.png","avatar":"/images/lsk_avatar.jpg","font_size":null,"font_family":null,"hover":{"shadow":true,"scale":false},"first_screen":{"enable":true,"header_transparent":false,"background_img":"/images/bg.svg","description":"Keep writing and Keep loving.","font_color":null,"hitokoto":false},"scroll":{"progress_bar":true,"percent":false}},"local_search":{"enable":true,"preload":true},"code_block":{"tools":{"enable":true,"style":"default"},"highlight_theme":"default"},"pjax":{"enable":true},"lazyload":{"enable":true},"comment":{"enable":false,"use":"valine","valine":{"appid":null,"appkey":null,"server_urls":null,"placeholder":null},"gitalk":{"github_id":null,"github_admins":null,"repository":null,"client_id":null,"client_secret":null,"proxy":null},"twikoo":{"env_id":null,"region":null,"version":"1.6.8"},"waline":{"server_url":null,"reaction":false,"version":2}},"post":{"author_label":{"enable":true,"auto":true,"custom_label_list":["Trainee","Engineer","Architect"]},"word_count":{"enable":true,"wordcount":true,"min2read":true},"img_align":"left","copyright_info":true},"website_count":{"busuanzi_count":{"enable":true,"site_uv":true,"site_pv":true,"page_pv":true}},"version":"3.8.6"}
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"}
+    KEEP.language_code_block = {"copy":"复制代码","copied":"已复制","fold":"折叠代码块","folded":"已折叠"}
+    KEEP.language_copy_copyright = {"copy":"复制版权信息","copied":"已复制","title":"原文标题","author":"原文作者","link":"原文链接"}
+  </script>
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+        <span class="scroll-progress-bar"></span>
+    
+
+    
+        <span class="pjax-progress-bar"></span>
+        <i class="pjax-progress-icon fas fa-circle-notch fa-spin"></i>
+    
+</div>
+
+
+<main class="page-container border-box">
+
+    <!-- home first screen  -->
+    
+
+    <!-- page content -->
+    <div class="page-main-content border-box">
+        <div class="page-main-content-top">
+            
+<header class="header-wrapper">
+
+    <div class="border-box header-content">
+        <div class="left border-box">
+            
+                <a class="logo-image border-box" href="/">
+                    <img src="/images/lsk_logo.png">
+                </a>
+            
+            <a class="site-name border-box" href="/">
+               LINSHUKAI&#39;S BLOG
+            </a>
+        </div>
+
+        <div class="right border-box">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                首页
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                归档
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/tags"
+                            >
+                                标签
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/categories"
+                            >
+                                分类
+                            </a>
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="fas fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/tags">标签</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/categories">分类</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle border-box">
+
+            <div class="main-content border-box">
+
+                
+
+                    <div class="fade-in-down-animation">
+    <div class="post-page-container border-box">
+
+        <div class="article-content-container border-box">
+
+            
+
+            <div class="article-content-bottom border-box">
+                
+                    <div class="article-title">
+                        Python Socket编程
+                    </div>
+                
+
+                
+                    <div class="article-header border-box">
+                        
+                            <div class="avatar-box border-box">
+                                <img src="/images/lsk_avatar.jpg">
+                            </div>
+                        
+                        <div class="info-box">
+                            <div class="author">
+                                <span class="name">linshukai</span>
+                                
+                                    <span class="author-label">Lv2</span>
+                                
+                            </div>
+                            <div class="meta-info border-box">
+                                
+
+<div class="article-meta-info-container border-box post">
+    <div class="article-meta-info border-box">
+        
+
+
+        
+            <span class="meta-info-item article-create-date">
+                <i class="icon fa-solid fa-calendar-check"></i>&nbsp;
+                <span class="pc">2021-04-25 10:37:00</span>
+                <span class="mobile">2021-04-25 10:37</span>
+            </span>
+
+            <span class="meta-info-item article-update-date">
+                <i class="icon fa-solid fa-file-pen"></i>&nbsp;
+                <span class="pc" data-updated="Sun Dec 03 2023 15:53:09 GMT+0000">2023-12-03 15:53:09</span>
+            </span>
+        
+
+        
+            <span class="meta-info-item article-category border-box"><i class="icon fas fa-folder"></i>&nbsp;
+                <ul class="article-category-ul">
+                    
+                            <li class="category-item"><a href="/categories/Python/">Python</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+            <span class="article-tag meta-info-item border-box">
+                <i class="icon fas fa-tags"></i>&nbsp;
+                <ul class="article-tag-ul">
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Python/">Python</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Socket/">Socket</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+        
+            <span class="meta-info-item article-wordcount">
+                <i class="icon fas fa-file-word"></i>&nbsp;<span>2k 字</span>
+            </span>
+        
+        
+            <span class="meta-info-item article-min2read">
+                <i class="icon fas fa-clock"></i>&nbsp;<span>8 分钟</span>
+            </span>
+        
+        
+            <span class="meta-info-item article-pv">
+                <i class="icon fas fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+            </span>
+        
+    </div>
+
+    
+</div>
+
+                            </div>
+                        </div>
+                    </div>
+                
+
+                <div class="article-content keep-markdown-body">
+                    
+
+                    <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>关于Python Socket编程，首先需要了解几个计算机网络的知识，通过以下的几个问题，有助于更好的理解Socket编程的意义，以及整个框架方面的知识：</p>
+<ul>
+<li><p>TCP和UDP协议本质上的区别？</p>
+<blockquote>
+<p>TCP协议，面向连接，可靠，基于字节流的传输层通信协议；UDP协议无连接，不可靠，基于数据包的传输层协议。<br><br>TCP协议在建立连接的过程需要经历三次握手，断开连接则需要经历四次挥手，而这建立连接的过程增加了传输过程中的安全性。<br>而建立连接的过程则会消耗系统的资源，消耗更多的时间，而相比较UDP协议传输过程则不会出现这种问题。<br><br>总结来讲，基于TCP协议传输，需要不断的确认对方是否收到信息，从而建立连接（确认过程次数有限制，即三次握手），UDP协议传输则<br>不需要确认接收端是否收到信息，只需要将信息发给对方。</p>
+</blockquote>
+</li>
+<li><p>TCP&#x2F;IP协议栈、HTTP协议、Socket之间的区别和联系？</p>
+<blockquote>
+<p>TCP&#x2F;IP协议栈就是一系列网络协议，可以分为四层模型来分析：应用层、传输层、网络层、链路层；<br><br>HTTP协议（超文本传输协议）就是在这一协议栈中的应用层协议；HTTP协议简单来说，它的作用就是规范数据的格式，让程序能够方便的识别，并且收发双方都需要遵循同样的协议格式进行数据传输。(应用层的协议也和HTTP协议的作用类似，不一样的是定义不同的数据格式。)<br><br>Socket可以理解为TCP&#x2F;IP协议栈提供的对外的操作接口，即应用层通过网络协议进行通信的接口。Socket可以使用不同的网络协议进行端对端的通信；</p>
+</blockquote>
+</li>
+<li><p>TCP Socket服务器的通信过程？</p>
+<blockquote>
+<p>Server端：<br><br>建立连接（socket()函数创建socket描述符、bind()函数绑定特定的监听地址（ip+port)、listen()函数监听socket、accept()阻塞等待客户端连接）<br><br>数据交互（read()函数阻塞等待客户端发送数据、write()函数发送给客户端数据）<br><br>Client端：<br><br>建立连接（socket()函数创建socket描述符、connect()函数向指定的监听地址发送连接请求）<br><br>数据交互（wirte()函数发送服务端数据、read()函数足阻塞等待接受服务端发送的数据）<br></p>
+</blockquote>
+</li>
+<li><p>socket和websocket之间的联系？</p>
+<blockquote>
+<p>webosocket是一种通信协议，不同于HTTP请求，客户端请求服务端资源，服务端响应的通信过程；websocket允许服务端主动<br>向客户端推送消息，同时做到客户端和服务端双向通讯的协议。（具体底层原理有待后面实践，暂时未接触）</p>
+</blockquote>
+</li>
+<li><p>HTTP,WSGI协议的联系和区别？</p>
+<blockquote>
+<p>HTTP协议（超文本传输协议），属于TCP&#x2F;IP协议栈中应用层的协议。用于规范传输数据的格式，是一种客户端和服务端传输的规则。<br><br>WSGI协议则是Python定义的Web服务器和框架程序通信的接口规则。两者联系不大，强行说的话，Python框架程序主要处理的是HTTP请求。<br><br>（后期可以实现一个WSGI协议的Python框架，用于处理HTTP请求的实验。）</p>
+</blockquote>
+</li>
+<li><p>主流Web框架，异步Web框架？</p>
+<blockquote>
+<p>主流Web框架：Django、Flask<br><br>异步Web框架：Tornado（内置异步模块）、Snaic（Python自带asyncio)、FastAPI（基于Starlette库） 、aiohttp（基于asyncio）</p>
+</blockquote>
+</li>
+<li><p>asyncio，aiohttp之间的联系？（异步编程）</p>
+<blockquote>
+<p>asyncio是一个异步IO库，aiohttp就是基于asyncio的异步HTTP框架（支持客户端&#x2F;服务端）</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="代码设计"><a href="#代码设计" class="headerlink" title="代码设计"></a>代码设计</h2><p>Python提供了基本的socket模块：</p>
+<ol>
+<li>socket模块；提供了标准的BSD Sockets API；</li>
+<li>socketserver模块：提供了服务器中心类，简化服务器的开发；</li>
+</ol>
+<h3 id="TCP-Socket服务端"><a href="#TCP-Socket服务端" class="headerlink" title="TCP Socket服务端"></a>TCP Socket服务端</h3><p><strong>socket模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">from</span> socket <span class="keyword">import</span> socket, AF_INET, SOCK_STREAM</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">echo_handler</span>(<span class="params">sock ,address</span>):</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&quot;Get Connection from address:&quot;</span>, address)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">		response = sock.recv(<span class="number">8192</span>)</span><br><span class="line">		<span class="keyword">if</span> <span class="keyword">not</span> response:</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		<span class="built_in">print</span>(<span class="string">f&quot;Got <span class="subst">&#123;response&#125;</span>&quot;</span>)</span><br><span class="line">		sock.sendall(response)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">echo_server</span>(<span class="params">address, back_log=<span class="number">5</span></span>):</span><br><span class="line">	sock = socket(AF_INET, SOCK_STREAM)</span><br><span class="line">	sock.bind(address)</span><br><span class="line">	sock.listen(back_log)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">		sock_client, address = sock.accept()</span><br><span class="line">		echo_handler(sock_client, address)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">	echo_server((<span class="string">&#x27;localhost&#x27;</span>, <span class="number">5000</span>))</span><br></pre></td></tr></table></figure>
+
+<p>代码详解：</p>
+<ul>
+<li>创建一个基于IPV4和TCP协议的Socket，这里AF_INET指的是使用IPV4协议，SOCK_STREAM指定使用面向流的TCP协议，绑定监听端口，设置等待连接的最大数量</li>
+<li>创建一个永久循环，获取客户端请求的连接，accept()会等待并返回一个客户端的连接；</li>
+<li>连接建立后，等待客户端数据，接受完客户端数据，然后返回数据给客户端，最后关闭连接</li>
+</ul>
+<p>存在的问题：当出现多个客户端请求时，由于是单个线程会发生阻塞的情况，所以如果需要多线程处理多个客户端请求，可以这样改；</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> threading <span class="keyword">import</span> Thread</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        client_sock, address = sock.accept()</span><br><span class="line">        thread = Thread(target=echo_handler, args=(client_sock, address))</span><br><span class="line">        thread.start()</span><br></pre></td></tr></table></figure>
+<p>这样的话，就会在每个客户端请求的时候，生成一个子线程然后处理请求；<br>（但是存在一个问题：当突然大量请求连接，消耗系统资源达到上限后，很可能造成程序无法处理后续请求。）</p>
+<p><strong>socketserver模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> socketserver <span class="keyword">import</span> BaseRequestHandler, TCPServer</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">EchoHandler</span>(<span class="title class_ inherited__">BaseRequestHandler</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">handle</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Got Connection From: %s&quot;</span> % <span class="built_in">str</span>(self.client_address))</span><br><span class="line">        <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">            msg = self.request.recv(<span class="number">8192</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> msg:</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            self.request.send(msg)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    server = TCPServer((<span class="string">&quot;&quot;</span>, <span class="number">5000</span>), EchoHandler)</span><br><span class="line">    server.serve_forever()</span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line">```python</span><br><span class="line"><span class="keyword">from</span> socketserver <span class="keyword">import</span> StreamRequestHandler, TCPServer, ThreadingTCPServer</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">EchoHandler</span>(<span class="title class_ inherited__">StreamRequestHandler</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">handle</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Got Connection Address: %s&quot;</span> % <span class="built_in">str</span>(self.client_address))</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> self.rfile:</span><br><span class="line">            <span class="built_in">print</span>(line)</span><br><span class="line">            self.wfile.write(<span class="built_in">bytes</span>(<span class="string">&quot;hello &#123;&#125;&quot;</span>.<span class="built_in">format</span>(line.decode(<span class="string">&#x27;utf-8&#x27;</span>)).encode(<span class="string">&#x27;utf-8&#x27;</span>)))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    serv = ThreadingTCPServer((<span class="string">&quot;&quot;</span>, <span class="number">5000</span>), EchoHandler)</span><br><span class="line">    serv.serve_forever()</span><br></pre></td></tr></table></figure>
+
+<p>代码详解：</p>
+<ul>
+<li>处理多个客户端，初始化一个ThreadingTCPServer实例，ThreadingTCPServer处理客户端的连接，会为每个客户端创建一个线程进行交互。</li>
+<li>设置绑定的IP地址和端口，以及处理类；</li>
+<li>使用StreamRequestHandler（使用流的请求处理程序类，类似file-like对象，提供标准文件接口简化通信过程），重写里面的handle方法，获取请求数据，返回数据给客户端；</li>
+</ul>
+<h3 id="TCP-Socket客户端"><a href="#TCP-Socket客户端" class="headerlink" title="TCP Socket客户端"></a>TCP Socket客户端</h3><p><strong>socket模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">from</span> socket <span class="keyword">import</span> socket, AF_INET, SOCK_STREAM</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">request_handler</span>():</span><br><span class="line">	start_time = time.time()</span><br><span class="line">	sock_client = socket(AF_INET, SOCK_STREAM)</span><br><span class="line">	sock_client.connect((<span class="string">&#x27;localhost&#x27;</span>, <span class="number">5000</span>))</span><br><span class="line">	</span><br><span class="line">	book_content = <span class="string">&quot;&quot;</span></span><br><span class="line">	<span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;send_books.txt&quot;</span>, <span class="string">&quot;r&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">		book_content = f.read()</span><br><span class="line">	</span><br><span class="line">	content_list = book_content.split(<span class="string">&quot;\n&quot;</span>)</span><br><span class="line">	<span class="keyword">for</span> content <span class="keyword">in</span> content_list:</span><br><span class="line">		<span class="keyword">if</span> content:</span><br><span class="line">			sock_client.send((content).encode())</span><br><span class="line">			time.sleep(<span class="number">2</span>)</span><br><span class="line">			response = sock_client.recv(<span class="number">8192</span>)</span><br><span class="line">			<span class="built_in">print</span>(response)</span><br><span class="line"></span><br><span class="line">	end_time = time.time()</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&quot;总共耗时:&quot;</span>, end_time-start_time)</span><br><span class="line"></span><br><span class="line">		</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">	request_handler()</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="UDP-Socket"><a href="#UDP-Socket" class="headerlink" title="UDP Socket"></a>UDP Socket</h3><p><strong>Socket模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> socket <span class="keyword">import</span> socket, AF_INET, SOCK_DGRAM</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">time_server</span>(<span class="params">address</span>):</span><br><span class="line">    sock = socket(AF_INET, SOCK_DGRAM)</span><br><span class="line">    sock.bind(address)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        msg, addr = sock.recvfrom(<span class="number">8192</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;Get message from&#x27;</span>, addr)</span><br><span class="line">        resp = time.ctime()</span><br><span class="line">        sock.sendto(resp.encode(<span class="string">&#x27;ascii&#x27;</span>), addr)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    time_server((<span class="string">&#x27;&#x27;</span>, <span class="number">5000</span>))</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>代码不详解，和之前的差不多，注意不同的协议就完事了</p>
+</blockquote>
+<p>客户端测试：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> socket <span class="keyword">import</span> socket, AF_INET, SOCK_DGRAM</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    s = socket(AF_INET, SOCK_DGRAM)</span><br><span class="line">    s.sendto(<span class="string">b&#x27;hello&#x27;</span>, (<span class="string">&#x27;localhost&#x27;</span>, <span class="number">5000</span>))</span><br><span class="line">    text = s.recvfrom(<span class="number">8192</span>)</span><br><span class="line">    <span class="built_in">print</span>(text)</span><br></pre></td></tr></table></figure>
+
+<p><strong>socketserver模块：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> socketserver <span class="keyword">import</span> BaseRequestHandler, UDPServer</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TimeHandler</span>(<span class="title class_ inherited__">BaseRequestHandler</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">handle</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Got Connection %s&quot;</span>.<span class="built_in">format</span>(<span class="built_in">str</span>(self.client_address)))</span><br><span class="line">        data = self.request[<span class="number">0</span>]</span><br><span class="line">        <span class="built_in">print</span>(data)</span><br><span class="line">        msg, sock = self.request</span><br><span class="line">        <span class="built_in">print</span>(msg)</span><br><span class="line">        data = time.ctime()</span><br><span class="line">        sock.sendto(data.encode(<span class="string">&#x27;ascii&#x27;</span>), self.client_address)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    u = UDPServer((<span class="string">&quot;localhost&quot;</span>, <span class="number">9999</span>), TimeHandler)</span><br><span class="line">    u.serve_forever()</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>代码不在赘述，如果需要多线程处理并发操作可以使用ThreadingUDPServer</p>
+</blockquote>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><blockquote>
+<p>关于本篇介绍Python Socket编程，大都是皮毛，只是谈到了Python实际处理socket的几个模块，<br>关于socket底层方面的知识并未提及，先了解个大概，从实际使用方面出发，在实际使用过程中结合<br>计算机网络知识，能够理解socket在整个TCP&#x2F;IP协议栈中的作用。<br><br>socket和socketserver模块都可以用来编写网络程序，不同的是socketserver省事很多，你可以专注<br>业务逻辑，不用去理会socket的各种细节，包括不限于多线程&#x2F;多进程，接收数据，发送数据，通信过程。<br></p>
+</blockquote>
+
+                </div>
+
+                
+                        
+<div class="article-copyright-info-container border-box">
+    <div class="copyright-info-content border-box">
+        <div class="copyright-info-top border-box">
+            <div class="post-title border-box text-ellipsis">
+                Python Socket编程
+            </div>
+
+            <div class="post-link border-box text-ellipsis">
+                2021/04/25/Python Socket编程/
+            </div>
+        </div>
+
+        <div class="copyright-info-bottom border-box">
+            <div class="post-author bottom-item">
+                <div class="type">
+                    作者
+                </div>
+                <div class="content">linshukai</div>
+            </div>
+
+            <div class="post-time bottom-item">
+                <div class="type">
+                    发布于
+                </div>
+                <div class="content">2021-04-25 10:37</div>
+            </div>
+
+
+            <div class="post-license bottom-item">
+                <div class="type">
+                    许可
+                </div>
+                <div class="content tooltip" data-tooltip-content="CC BY-NC-SA 4.0">
+                    <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans">
+                        <i class="fa-brands fa-creative-commons"></i>
+                        <i class="fa-brands fa-creative-commons-by"></i>
+                        <i class="fa-brands fa-creative-commons-nc"></i>
+                        <i class="fa-brands fa-creative-commons-sa"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <i class="copyright-bg fa-solid fa-copyright"></i>
+    </div>
+    <div class="copy-copyright-info flex-center tooltip" data-tooltip-content="复制版权信息" data-tooltip-offset-y="-2px">
+        <i class="fa-solid fa-copy"></i>
+    </div>
+</div>
+
+                
+
+                <div class="post-bottom-tags-and-share border-box">
+                    <div>
+                        
+                            <ul class="post-tags-box border-box">
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Python/">Python</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Socket/">Socket</a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </div>
+                    <div>
+                        
+                    </div>
+                </div>
+
+                
+
+                
+                    <div class="article-nav">
+                        
+                            <div class="article-prev">
+                                <a class="prev"
+                                   rel="prev"
+                                   href="/2023/06/24/Gorm%E6%A1%86%E6%9E%B6-CRUD%E6%93%8D%E4%BD%9C/"
+                                   title="Gorm框架-CRUD操作"
+                                >
+                                    <span class="left arrow-icon flex-center">
+                                      <i class="fas fa-chevron-left"></i>
+                                    </span>
+                                            <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">Gorm框架-CRUD操作</span>
+                                        <span class="post-nav-item">上一篇</span>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                        
+                            <div class="article-next">
+                                <a class="next"
+                                   rel="next"
+                                   href="/2020/12/15/%E6%B5%85%E6%9E%90Python%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2/"
+                                   title="浅析Python项目部署"
+                                >
+                                    <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">浅析Python项目部署</span>
+                                        <span class="post-nav-item">下一篇</span>
+                                    </span>
+                                            <span class="right arrow-icon flex-center">
+                                      <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                    </div>
+                
+
+                
+                    
+
+
+
+
+
+
+                
+            </div>
+        </div>
+
+        
+            <div class="pc-post-toc right-toc">
+                <div class="post-toc-wrap border-box">
+    <div class="post-toc border-box">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E8%AE%BE%E8%AE%A1"><span class="nav-number">2.</span> <span class="nav-text">代码设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP-Socket%E6%9C%8D%E5%8A%A1%E7%AB%AF"><span class="nav-number">2.1.</span> <span class="nav-text">TCP Socket服务端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP-Socket%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="nav-number">2.2.</span> <span class="nav-text">TCP Socket客户端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP-Socket"><span class="nav-number">2.3.</span> <span class="nav-text">UDP Socket</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.4.</span> <span class="nav-text">总结</span></a></li></ol></li></ol>
+    </div>
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom border-box">
+            
+<footer class="footer border-box">
+    <div class="border-box website-info-box default">
+        
+            <div class="copyright-info info-item default">
+                &copy;&nbsp;<span>2020</span>&nbsp;-&nbsp;2023
+                
+                    &nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;&nbsp;<a href="/">linshukai</a>
+                
+            </div>
+
+            <div class="theme-info info-item default">
+                由&nbsp;<a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;驱动&nbsp;&&nbsp;主题&nbsp;<a class="keep-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep</a>
+            </div>
+
+            
+
+            
+        
+
+        <div class="count-item info-item default">
+            
+
+            
+                <span class="count-box border-box uv">
+                    <span class="item-type border-box">访客数</span>
+                    <span class="item-value border-box uv" id="busuanzi_value_site_uv"></span>
+                </span>
+            
+
+            
+                <span class="count-box border-box pv">
+                    <span class="item-type border-box">访问量</span>
+                    <span class="item-value border-box pv" id="busuanzi_value_site_pv"></span>
+                </span>
+            
+        </div>
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    <!-- post tools -->
+    
+        <div class="post-tools right-toc">
+            <div class="post-tools-container border-box">
+    <ul class="tools-list border-box">
+        <!-- PC TOC show toggle -->
+        
+            <li class="tools-item flex-center toggle-show-toc">
+                <i class="fas fa-list"></i>
+            </li>
+        
+
+        <!-- PC go comment -->
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <!-- side tools -->
+    <div class="side-tools">
+        <div class="side-tools-container border-box ">
+    <ul class="side-tools-list side-tools-show-handle border-box">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list border-box">
+        
+            <li class="tools-item toggle-show-toc-tablet flex-center">
+                <i class="fas fa-list"></i>
+            </li>
+        
+
+        
+
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+
+        <li class="tools-item tool-scroll-to-top flex-center show-arrow">
+            <i class="arrow fas fa-arrow-up"></i>
+            <span class="percent"></span>
+        </li>
+    </ul>
+</div>
+
+    </div>
+
+    <!-- image mask -->
+    <div class="zoom-in-image-mask">
+    <img class="zoom-in-image">
+</div>
+
+
+    <!-- local search -->
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="close-popup-btn">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+    <!-- tablet toc -->
+    
+        <div class="tablet-post-toc-mask">
+            <div class="tablet-post-toc">
+                <div class="post-toc-wrap border-box">
+    <div class="post-toc border-box">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E8%AE%BE%E8%AE%A1"><span class="nav-number">2.</span> <span class="nav-text">代码设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP-Socket%E6%9C%8D%E5%8A%A1%E7%AB%AF"><span class="nav-number">2.1.</span> <span class="nav-text">TCP Socket服务端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP-Socket%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="nav-number">2.2.</span> <span class="nav-text">TCP Socket客户端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDP-Socket"><span class="nav-number">2.3.</span> <span class="nav-text">UDP Socket</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.4.</span> <span class="nav-text">总结</span></a></li></ol></li></ol>
+    </div>
+</div>
+
+            </div>
+        </div>
+    
+</main>
+
+
+
+<!-- common -->
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+
+<!-- local-search -->
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+<!-- code-block -->
+
+    
+<script src="/js/code-block.js"></script>
+
+
+
+<!-- lazyload -->
+
+    
+<script src="/js/lazyload.js"></script>
+
+
+
+<div class="pjax">
+    
+        <!-- post-helper -->
+        
+<script src="/js/post/post-helper.js"></script>
+
+
+        <!-- toc -->
+        
+            
+<script src="/js/post/toc.js"></script>
+
+        
+
+        <!-- copyright-info -->
+        
+            
+<script src="/js/post/copyright-info.js"></script>
+
+        
+
+        <!-- share -->
+        
+    
+
+    <!-- category-page -->
+    
+
+    <!-- links-page -->
+    
+</div>
+
+<!-- mermaid -->
+
+
+<!-- pjax -->
+
+    
+<script src="/js/libs/pjax.min.js"></script>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        window.pjax = new Pjax({
+            selectors: [
+                'head title',
+                '.page-container',
+                '.pjax'
+            ],
+            history: true,
+            debug: false,
+            cacheBust: false,
+            timeout: 0,
+            analytics: false,
+            currentUrlFullReload: false,
+            scrollRestoration: false,
+        });
+
+        document.addEventListener('pjax:send', () => {
+            KEEP.utils.pjaxProgressBarStart()
+        });
+
+        document.addEventListener('pjax:complete', () => {
+            KEEP.utils.pjaxProgressBarEnd()
+            window.pjax.executeScripts(document.querySelectorAll('script[data-pjax], .pjax script'))
+            KEEP.initExecute()
+        });
+    });
+</script>
+
+
+
+
+</body>
+</html>
