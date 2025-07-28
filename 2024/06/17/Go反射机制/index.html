@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="linshukai">
+    
+    <title>
+        
+            Go反射机制 |
+        
+        LINSHUKAI&#39;S BLOG
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    
+        <link rel="shortcut icon" href="/images/lsk_favicon.png">
+    
+    
+<link rel="stylesheet" href="/font/css/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/regular.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/solid.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/brands.min.css">
+
+    
+    <script class="keep-theme-configurations">
+    const KEEP = window.KEEP || {}
+    KEEP.hexo_config = {"hostname":"example.com","root":"/","language":"zh-CN","path":"search.json"}
+    KEEP.theme_config = {"toc":{"enable":true,"number":true,"expand_all":true,"init_open":true},"style":{"primary_color":"#0066cc","logo":"/images/lsk_logo.png","favicon":"/images/lsk_favicon.png","avatar":"/images/lsk_avatar.jpg","font_size":null,"font_family":null,"hover":{"shadow":true,"scale":false},"first_screen":{"enable":true,"header_transparent":false,"background_img":"/images/bg.svg","description":"Keep writing and Keep loving.","font_color":null,"hitokoto":false},"scroll":{"progress_bar":true,"percent":false}},"local_search":{"enable":true,"preload":true},"code_block":{"tools":{"enable":true,"style":"default"},"highlight_theme":"default"},"pjax":{"enable":true},"lazyload":{"enable":true},"comment":{"enable":false,"use":"valine","valine":{"appid":null,"appkey":null,"server_urls":null,"placeholder":null},"gitalk":{"github_id":null,"github_admins":null,"repository":null,"client_id":null,"client_secret":null,"proxy":null},"twikoo":{"env_id":null,"region":null,"version":"1.6.8"},"waline":{"server_url":null,"reaction":false,"version":2}},"post":{"author_label":{"enable":true,"auto":true,"custom_label_list":["Trainee","Engineer","Architect"]},"word_count":{"enable":true,"wordcount":true,"min2read":true},"img_align":"left","copyright_info":true},"website_count":{"busuanzi_count":{"enable":true,"site_uv":true,"site_pv":true,"page_pv":true}},"version":"3.8.6"}
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"}
+    KEEP.language_code_block = {"copy":"复制代码","copied":"已复制","fold":"折叠代码块","folded":"已折叠"}
+    KEEP.language_copy_copyright = {"copy":"复制版权信息","copied":"已复制","title":"原文标题","author":"原文作者","link":"原文链接"}
+  </script>
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+        <span class="scroll-progress-bar"></span>
+    
+
+    
+        <span class="pjax-progress-bar"></span>
+        <i class="pjax-progress-icon fas fa-circle-notch fa-spin"></i>
+    
+</div>
+
+
+<main class="page-container border-box">
+
+    <!-- home first screen  -->
+    
+
+    <!-- page content -->
+    <div class="page-main-content border-box">
+        <div class="page-main-content-top">
+            
+<header class="header-wrapper">
+
+    <div class="border-box header-content">
+        <div class="left border-box">
+            
+                <a class="logo-image border-box" href="/">
+                    <img src="/images/lsk_logo.png">
+                </a>
+            
+            <a class="site-name border-box" href="/">
+               LINSHUKAI&#39;S BLOG
+            </a>
+        </div>
+
+        <div class="right border-box">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                首页
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                归档
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/tags"
+                            >
+                                标签
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/categories"
+                            >
+                                分类
+                            </a>
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="fas fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/tags">标签</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/categories">分类</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle border-box">
+
+            <div class="main-content border-box">
+
+                
+
+                    <div class="fade-in-down-animation">
+    <div class="post-page-container border-box">
+
+        <div class="article-content-container border-box">
+
+            
+
+            <div class="article-content-bottom border-box">
+                
+                    <div class="article-title">
+                        Go反射机制
+                    </div>
+                
+
+                
+                    <div class="article-header border-box">
+                        
+                            <div class="avatar-box border-box">
+                                <img src="/images/lsk_avatar.jpg">
+                            </div>
+                        
+                        <div class="info-box">
+                            <div class="author">
+                                <span class="name">linshukai</span>
+                                
+                                    <span class="author-label">Lv2</span>
+                                
+                            </div>
+                            <div class="meta-info border-box">
+                                
+
+<div class="article-meta-info-container border-box post">
+    <div class="article-meta-info border-box">
+        
+
+
+        
+            <span class="meta-info-item article-create-date">
+                <i class="icon fa-solid fa-calendar-check"></i>&nbsp;
+                <span class="pc">2024-06-17 15:09:00</span>
+                <span class="mobile">2024-06-17 15:09</span>
+            </span>
+
+            <span class="meta-info-item article-update-date">
+                <i class="icon fa-solid fa-file-pen"></i>&nbsp;
+                <span class="pc" data-updated="Mon Jul 28 2025 09:29:23 GMT+0000">2025-07-28 09:29:23</span>
+            </span>
+        
+
+        
+            <span class="meta-info-item article-category border-box"><i class="icon fas fa-folder"></i>&nbsp;
+                <ul class="article-category-ul">
+                    
+                            <li class="category-item"><a href="/categories/Go/">Go</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+            <span class="article-tag meta-info-item border-box">
+                <i class="icon fas fa-tags"></i>&nbsp;
+                <ul class="article-tag-ul">
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Go/">Go</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/reflect/">reflect</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/%E5%8F%8D%E5%B0%84/">反射</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+        
+            <span class="meta-info-item article-wordcount">
+                <i class="icon fas fa-file-word"></i>&nbsp;<span>1.3k 字</span>
+            </span>
+        
+        
+            <span class="meta-info-item article-min2read">
+                <i class="icon fas fa-clock"></i>&nbsp;<span>6 分钟</span>
+            </span>
+        
+        
+            <span class="meta-info-item article-pv">
+                <i class="icon fas fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+            </span>
+        
+    </div>
+
+    
+</div>
+
+                            </div>
+                        </div>
+                    </div>
+                
+
+                <div class="article-content keep-markdown-body">
+                    
+
+                    <h2 id="反射"><a href="#反射" class="headerlink" title="反射"></a>反射</h2><p>什么是反射？为什么需要用到反射？</p>
+<blockquote>
+<p>反射是程序能够检测自身结构的机制，程序可以利用反射这个机制动态修改变量的值、调用函数和方法、甚至可以创建新的数据类型和结构。<br>但是反射带来最大的弊端就是性能问题，其次就是代码脆弱，问题可能在运行过程中才会被发现，以及代码可读性，可维护性。</p>
+</blockquote>
+<p>反射三个经典定律：</p>
+<ol>
+<li>反射能把interface{}转换成反射对象；</li>
+<li>反射能把反射对象还原成interface{}类型变量；</li>
+<li>要修改反射对象，其值必须可设置；<blockquote>
+<p>反射需要访问类型相关信息时，需要用到reflect.TypeOf；需要修改反射值，需要用到reflect.ValueOf。</p>
+</blockquote>
+</li>
+</ol>
+<h3 id="reflect-TypeOf"><a href="#reflect-TypeOf" class="headerlink" title="reflect.TypeOf"></a>reflect.TypeOf</h3><blockquote>
+<p>reflect.TypeOf函数将变量转换成reflect.Type接口,reflect.Type接口定义了一系列方法，通过这些方法可以获取类型的相关信息;</p>
+</blockquote>
+<p>reflect.Type:</p>
+<ul>
+<li>Kind()：获取变量在Go中的基础类型;</li>
+<li>Elem()：可以判断类型为any的数据结构所存储的元素类型，可接收底层参数必须是指针、切片、数组、通道、映射表;</li>
+<li>Size()：获取对应类型所占的字节大小;</li>
+<li>Comparable()：判断一个类型是否可以被比较;</li>
+<li>Implements()：判断一个类型是否实现某一个接口;</li>
+<li>ConvertibleTo()：判断一个类型是否可以转换成另外一个指定类型；</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> rFace <span class="keyword">interface</span> &#123;</span><br><span class="line">	hello()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> myStruct <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m myStruct)</span></span> hello() &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;hello,world&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BaseUseReflectType</span><span class="params">()</span></span> &#123;</span><br><span class="line">	tmpMap := <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">int</span>&#123;&#125;</span><br><span class="line">	rType := reflect.TypeOf(tmpMap)</span><br><span class="line">	fmt.Println(rType.Kind())</span><br><span class="line">	fmt.Println(rType.Elem())</span><br><span class="line">	fmt.Println(rType.Size())</span><br><span class="line"></span><br><span class="line">	tmpStruct := myStruct&#123;&#125;</span><br><span class="line">	sType := reflect.TypeOf(tmpStruct)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> tmpFace = <span class="built_in">new</span>(rFace)</span><br><span class="line">	rIface := reflect.TypeOf(tmpFace).Elem()</span><br><span class="line">	fmt.Println(sType.Comparable())</span><br><span class="line">	fmt.Println(sType.Implements(rIface))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="reflect-ValueOf"><a href="#reflect-ValueOf" class="headerlink" title="reflect.ValueOf"></a>reflect.ValueOf</h3><blockquote>
+<p>reflect.ValueOf函数将变量转换成reflect.Value结构体变量，包含类型信息和实际值，并且这个结构体定义了很多方法，通过这些<br>方法可以直接操作Value字段ptr所指向的实际数据；</p>
+</blockquote>
+<p>reflect.Value:</p>
+<ul>
+<li>Type()：获取一个反射值的类型；</li>
+<li>Elem()：获取一个接口或者指针指向的值，如果不是这两种类型则会panic；</li>
+<li>Set()：如果需要通过反射来修改反射值，则必须这个反射值必须是可寻址的；</li>
+<li>Interface()：获取反射值原本的值；</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> myStruct <span class="keyword">struct</span> &#123;</span><br><span class="line">	Name <span class="type">string</span> <span class="string">`json:&quot;Name,omiempty&quot;`</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m myStruct)</span></span> hello() &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;hello,world&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BaseUserReflectValue</span><span class="params">()</span></span> &#123;</span><br><span class="line">	tmpstruct := &amp;myStruct&#123;Name: <span class="string">&quot;linshukai&quot;</span>&#125;</span><br><span class="line"></span><br><span class="line">	rValue := reflect.ValueOf(tmpstruct)</span><br><span class="line">	fmt.Println(rValue.Type())</span><br><span class="line">	fmt.Println(rValue.Kind())</span><br><span class="line"></span><br><span class="line">	s := rValue.Elem()</span><br><span class="line">	fmt.Println(s)</span><br><span class="line">	nameField := s.FieldByName(<span class="string">&quot;Name&quot;</span>)</span><br><span class="line">	nameField.SetString(<span class="string">&quot;zhangsan&quot;</span>)</span><br><span class="line">	fmt.Println(s.Interface())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h3><blockquote>
+<p>可以通过反射来获取函数的所有信息，也可以通过反射调用函数；</p>
+</blockquote>
+<p>通过反射操作函数：</p>
+<ul>
+<li>获取函数信息：TypeOf(),NumIn(),NumOut(),In(),Out(),Name(),String()</li>
+<li>反射调用函数：ValueOf(),Call()</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">CompareMax</span><span class="params">(a []<span class="type">int</span>, b []<span class="type">int</span>, params ...[]<span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">	a = <span class="built_in">append</span>(a, b...)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(params); i++ &#123;</span><br><span class="line">		a = <span class="built_in">append</span>(a, params[i]...)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(a) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	maxNum := a[<span class="number">0</span>]</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> a &#123;</span><br><span class="line">		<span class="keyword">if</span> maxNum &lt; v &#123;</span><br><span class="line">			maxNum = v</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> maxNum</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BaseUseReflectFunction</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	a := []<span class="type">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">1</span>, <span class="number">5</span>, <span class="number">19</span>, <span class="number">22</span>, <span class="number">311</span>, <span class="number">332</span>, <span class="number">11</span>, <span class="number">2</span>, <span class="number">33333</span>, <span class="number">11</span>&#125;</span><br><span class="line">	b := []<span class="type">int</span>&#123;<span class="number">3993</span>, <span class="number">3</span>, <span class="number">322</span>, <span class="number">22</span>, <span class="number">2211</span>, <span class="number">23123324</span>, <span class="number">7567655</span>, <span class="number">854234</span>, <span class="number">23</span>&#125;</span><br><span class="line">	aValue := reflect.ValueOf(a)</span><br><span class="line">	bValue := reflect.ValueOf(b)</span><br><span class="line"></span><br><span class="line">	rType := reflect.TypeOf(CompareMax)</span><br><span class="line">	fmt.Println(rType.Name())             <span class="comment">// 打印函数名称</span></span><br><span class="line">	fmt.Println(rType.NumIn())            <span class="comment">// 打印函数传入参数数量</span></span><br><span class="line">	fmt.Println(rType.In(<span class="number">0</span>), rType.In(<span class="number">1</span>)) <span class="comment">// 打印函数传入参数1,2类型</span></span><br><span class="line">	fmt.Println(rType.NumOut())           <span class="comment">// 打印函数返回值数量</span></span><br><span class="line">	fmt.Println(rType.Out(<span class="number">0</span>))             <span class="comment">// 打印函数第一个返回值类型</span></span><br><span class="line">	fmt.Println(rType.String())</span><br><span class="line"></span><br><span class="line">	rValue := reflect.ValueOf(CompareMax)</span><br><span class="line">	resValue := rValue.Call([]reflect.Value&#123;aValue, bValue&#125;)</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> resValue &#123;</span><br><span class="line">		fmt.Println(v.Interface())</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="结构体"><a href="#结构体" class="headerlink" title="结构体"></a>结构体</h3><blockquote>
+<p>通过反射访问结构体中的字段、访问字段的Tag、修改字段、调用结构体的方法等，常见用于orm引擎;</p>
+</blockquote>
+<p>通过反射操作结构体：</p>
+<ul>
+<li>访问字段：NumField(),Field(),FieldByName();</li>
+<li>修改字段：SetString(),SetInt();</li>
+<li>访问Tag：structTag.Lookup(),structTag.Get();</li>
+<li>调用方法：MethodByName(),Call();</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> PersonModel <span class="keyword">struct</span> &#123;</span><br><span class="line">	Name    <span class="type">string</span> <span class="string">`json:&quot;name&quot;`</span></span><br><span class="line">	Age     <span class="type">int</span>    <span class="string">`json:&quot;age&quot;`</span></span><br><span class="line">	Address <span class="type">string</span> <span class="string">`json:&quot;address&quot;`</span></span><br><span class="line">	money   <span class="type">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p PersonModel)</span></span> Talk(msg <span class="type">string</span>) <span class="type">string</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> p.Name + <span class="string">&quot;:&quot;</span> + msg</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">handleStruct</span><span class="params">(i <span class="keyword">interface</span>&#123;&#125;)</span></span> <span class="type">error</span> &#123;</span><br><span class="line"></span><br><span class="line">	rType := reflect.TypeOf(i)</span><br><span class="line">	<span class="keyword">if</span> rType.Kind() == reflect.Pointer &#123;</span><br><span class="line">		s := rType.Elem()</span><br><span class="line">		<span class="keyword">if</span> s.Kind() == reflect.Struct &#123;</span><br><span class="line">			<span class="comment">// 输出结构体字段</span></span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; s.NumField(); i++ &#123;</span><br><span class="line">				field := s.Field(i)</span><br><span class="line">				<span class="comment">// 打印基础信息</span></span><br><span class="line">				fmt.Println(field.Name, field.Type, field.Tag)</span><br><span class="line">				<span class="comment">// 打印标签</span></span><br><span class="line">				fmt.Println(field.Tag.Get(<span class="string">&quot;json&quot;</span>))</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// 修改年龄</span></span><br><span class="line">			rValue := reflect.ValueOf(i).Elem()</span><br><span class="line"></span><br><span class="line">			method := rValue.MethodByName(<span class="string">&quot;Talk&quot;</span>)</span><br><span class="line">			msg := reflect.ValueOf(<span class="string">&quot;hello,world&quot;</span>)</span><br><span class="line">			resValues := method.Call([]reflect.Value&#123;msg&#125;)</span><br><span class="line">			<span class="keyword">for</span> _, v := <span class="keyword">range</span> resValues &#123;</span><br><span class="line">				fmt.Println(v)</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			age := rValue.FieldByName(<span class="string">&quot;Age&quot;</span>)</span><br><span class="line">			<span class="keyword">if</span> age.IsValid() &amp;&amp; age.CanSet() &#123;</span><br><span class="line">				tmpAge := age.Interface()</span><br><span class="line">				age.SetInt(<span class="type">int64</span>(tmpAge.(<span class="type">int</span>) + <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// 修改地址</span></span><br><span class="line">			address := rValue.FieldByName(<span class="string">&quot;Address&quot;</span>)</span><br><span class="line">			<span class="keyword">if</span> address.IsValid() &amp;&amp; address.CanSet() &#123;</span><br><span class="line">				tmpAddress := address.Interface()</span><br><span class="line">				address.SetString(tmpAddress.(<span class="type">string</span>) + <span class="string">&quot; Guangzhou city&quot;</span>)</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> errors.New(<span class="string">&quot;not support reflect type: &quot;</span> + rType.Kind().String())</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BaseUseReflectStruct</span><span class="params">()</span></span> &#123;</span><br><span class="line">	p := PersonModel&#123;</span><br><span class="line">		Name:    <span class="string">&quot;zhangsan&quot;</span>,</span><br><span class="line">		Age:     <span class="number">23</span>,</span><br><span class="line">		Address: <span class="string">&quot;guangdong provience&quot;</span>,</span><br><span class="line">		money:   <span class="number">33000</span>,</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println(p)</span><br><span class="line">	handleStruct(&amp;p)</span><br><span class="line">	fmt.Println(p)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="reflect-DeepEqual"><a href="#reflect-DeepEqual" class="headerlink" title="reflect.DeepEqual"></a>reflect.DeepEqual</h3><blockquote>
+<p>判断两个变量是否完全相等的函数</p>
+</blockquote>
+<p>Todo: 解析如何判断不同类型变量是否相等(源码)；</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BaseUseReflectDeepEqual</span><span class="params">()</span></span> &#123;</span><br><span class="line">	a := <span class="built_in">make</span>([]<span class="type">int</span>, <span class="number">100</span>)</span><br><span class="line">	b := <span class="built_in">make</span>([]<span class="type">int</span>, <span class="number">100</span>)</span><br><span class="line">	fmt.Println(reflect.DeepEqual(a, b))</span><br><span class="line"></span><br><span class="line">	a = <span class="built_in">append</span>(a, <span class="number">10</span>)</span><br><span class="line">	fmt.Println(reflect.DeepEqual(a, b))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="备注"><a href="#备注" class="headerlink" title="备注"></a>备注</h3><blockquote>
+<p><a class="link"   target="_blank" rel="noopener" href="https://golang.design/go-questions/stdlib/reflect/how/" >https://golang.design/go-questions/stdlib/reflect/how/<i class="fas fa-external-link-alt"></i></a><br><a class="link"   target="_blank" rel="noopener" href="https://golang.halfiisland.com/essential/senior/105.reflect.html" >https://golang.halfiisland.com/essential/senior/105.reflect.html<i class="fas fa-external-link-alt"></i></a></p>
+</blockquote>
+
+                </div>
+
+                
+                        
+<div class="article-copyright-info-container border-box">
+    <div class="copyright-info-content border-box">
+        <div class="copyright-info-top border-box">
+            <div class="post-title border-box text-ellipsis">
+                Go反射机制
+            </div>
+
+            <div class="post-link border-box text-ellipsis">
+                2024/06/17/Go反射机制/
+            </div>
+        </div>
+
+        <div class="copyright-info-bottom border-box">
+            <div class="post-author bottom-item">
+                <div class="type">
+                    作者
+                </div>
+                <div class="content">linshukai</div>
+            </div>
+
+            <div class="post-time bottom-item">
+                <div class="type">
+                    发布于
+                </div>
+                <div class="content">2024-06-17 15:09</div>
+            </div>
+
+
+            <div class="post-license bottom-item">
+                <div class="type">
+                    许可
+                </div>
+                <div class="content tooltip" data-tooltip-content="CC BY-NC-SA 4.0">
+                    <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans">
+                        <i class="fa-brands fa-creative-commons"></i>
+                        <i class="fa-brands fa-creative-commons-by"></i>
+                        <i class="fa-brands fa-creative-commons-nc"></i>
+                        <i class="fa-brands fa-creative-commons-sa"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <i class="copyright-bg fa-solid fa-copyright"></i>
+    </div>
+    <div class="copy-copyright-info flex-center tooltip" data-tooltip-content="复制版权信息" data-tooltip-offset-y="-2px">
+        <i class="fa-solid fa-copy"></i>
+    </div>
+</div>
+
+                
+
+                <div class="post-bottom-tags-and-share border-box">
+                    <div>
+                        
+                            <ul class="post-tags-box border-box">
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Go/">Go</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/reflect/">reflect</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/%E5%8F%8D%E5%B0%84/">反射</a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </div>
+                    <div>
+                        
+                    </div>
+                </div>
+
+                
+
+                
+                    <div class="article-nav">
+                        
+                            <div class="article-prev">
+                                <a class="prev"
+                                   rel="prev"
+                                   href="/2024/12/06/Go%E5%B9%B6%E5%8F%91%E6%A8%A1%E5%BC%8F/"
+                                   title="Go并发模式"
+                                >
+                                    <span class="left arrow-icon flex-center">
+                                      <i class="fas fa-chevron-left"></i>
+                                    </span>
+                                            <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">Go并发模式</span>
+                                        <span class="post-nav-item">上一篇</span>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                        
+                            <div class="article-next">
+                                <a class="next"
+                                   rel="next"
+                                   href="/2024/06/07/Go%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C/"
+                                   title="Go文件操作"
+                                >
+                                    <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">Go文件操作</span>
+                                        <span class="post-nav-item">下一篇</span>
+                                    </span>
+                                            <span class="right arrow-icon flex-center">
+                                      <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                    </div>
+                
+
+                
+                    
+
+
+
+
+
+
+                
+            </div>
+        </div>
+
+        
+            <div class="pc-post-toc right-toc">
+                <div class="post-toc-wrap border-box">
+    <div class="post-toc border-box">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8D%E5%B0%84"><span class="nav-number">1.</span> <span class="nav-text">反射</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#reflect-TypeOf"><span class="nav-number">1.1.</span> <span class="nav-text">reflect.TypeOf</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reflect-ValueOf"><span class="nav-number">1.2.</span> <span class="nav-text">reflect.ValueOf</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%BD%E6%95%B0"><span class="nav-number">1.3.</span> <span class="nav-text">函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-number">1.4.</span> <span class="nav-text">结构体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reflect-DeepEqual"><span class="nav-number">1.5.</span> <span class="nav-text">reflect.DeepEqual</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%87%E6%B3%A8"><span class="nav-number">1.6.</span> <span class="nav-text">备注</span></a></li></ol></li></ol>
+    </div>
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom border-box">
+            
+<footer class="footer border-box">
+    <div class="border-box website-info-box default">
+        
+            <div class="copyright-info info-item default">
+                &copy;&nbsp;<span>2020</span>&nbsp;-&nbsp;2025
+                
+                    &nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;&nbsp;<a href="/">linshukai</a>
+                
+            </div>
+
+            <div class="theme-info info-item default">
+                由&nbsp;<a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;驱动&nbsp;&&nbsp;主题&nbsp;<a class="keep-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep</a>
+            </div>
+
+            
+
+            
+        
+
+        <div class="count-item info-item default">
+            
+
+            
+                <span class="count-box border-box uv">
+                    <span class="item-type border-box">访客数</span>
+                    <span class="item-value border-box uv" id="busuanzi_value_site_uv"></span>
+                </span>
+            
+
+            
+                <span class="count-box border-box pv">
+                    <span class="item-type border-box">访问量</span>
+                    <span class="item-value border-box pv" id="busuanzi_value_site_pv"></span>
+                </span>
+            
+        </div>
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    <!-- post tools -->
+    
+        <div class="post-tools right-toc">
+            <div class="post-tools-container border-box">
+    <ul class="tools-list border-box">
+        <!-- PC TOC show toggle -->
+        
+            <li class="tools-item flex-center toggle-show-toc">
+                <i class="fas fa-list"></i>
+            </li>
+        
+
+        <!-- PC go comment -->
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <!-- side tools -->
+    <div class="side-tools">
+        <div class="side-tools-container border-box ">
+    <ul class="side-tools-list side-tools-show-handle border-box">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list border-box">
+        
+            <li class="tools-item toggle-show-toc-tablet flex-center">
+                <i class="fas fa-list"></i>
+            </li>
+        
+
+        
+
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+
+        <li class="tools-item tool-scroll-to-top flex-center show-arrow">
+            <i class="arrow fas fa-arrow-up"></i>
+            <span class="percent"></span>
+        </li>
+    </ul>
+</div>
+
+    </div>
+
+    <!-- image mask -->
+    <div class="zoom-in-image-mask">
+    <img class="zoom-in-image">
+</div>
+
+
+    <!-- local search -->
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="close-popup-btn">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+    <!-- tablet toc -->
+    
+        <div class="tablet-post-toc-mask">
+            <div class="tablet-post-toc">
+                <div class="post-toc-wrap border-box">
+    <div class="post-toc border-box">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8D%E5%B0%84"><span class="nav-number">1.</span> <span class="nav-text">反射</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#reflect-TypeOf"><span class="nav-number">1.1.</span> <span class="nav-text">reflect.TypeOf</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reflect-ValueOf"><span class="nav-number">1.2.</span> <span class="nav-text">reflect.ValueOf</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%BD%E6%95%B0"><span class="nav-number">1.3.</span> <span class="nav-text">函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%84%E4%BD%93"><span class="nav-number">1.4.</span> <span class="nav-text">结构体</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reflect-DeepEqual"><span class="nav-number">1.5.</span> <span class="nav-text">reflect.DeepEqual</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%87%E6%B3%A8"><span class="nav-number">1.6.</span> <span class="nav-text">备注</span></a></li></ol></li></ol>
+    </div>
+</div>
+
+            </div>
+        </div>
+    
+</main>
+
+
+
+<!-- common -->
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+
+<!-- local-search -->
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+<!-- code-block -->
+
+    
+<script src="/js/code-block.js"></script>
+
+
+
+<!-- lazyload -->
+
+    
+<script src="/js/lazyload.js"></script>
+
+
+
+<div class="pjax">
+    
+        <!-- post-helper -->
+        
+<script src="/js/post/post-helper.js"></script>
+
+
+        <!-- toc -->
+        
+            
+<script src="/js/post/toc.js"></script>
+
+        
+
+        <!-- copyright-info -->
+        
+            
+<script src="/js/post/copyright-info.js"></script>
+
+        
+
+        <!-- share -->
+        
+    
+
+    <!-- category-page -->
+    
+
+    <!-- links-page -->
+    
+</div>
+
+<!-- mermaid -->
+
+
+<!-- pjax -->
+
+    
+<script src="/js/libs/pjax.min.js"></script>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        window.pjax = new Pjax({
+            selectors: [
+                'head title',
+                '.page-container',
+                '.pjax'
+            ],
+            history: true,
+            debug: false,
+            cacheBust: false,
+            timeout: 0,
+            analytics: false,
+            currentUrlFullReload: false,
+            scrollRestoration: false,
+        });
+
+        document.addEventListener('pjax:send', () => {
+            KEEP.utils.pjaxProgressBarStart()
+        });
+
+        document.addEventListener('pjax:complete', () => {
+            KEEP.utils.pjaxProgressBarEnd()
+            window.pjax.executeScripts(document.querySelectorAll('script[data-pjax], .pjax script'))
+            KEEP.initExecute()
+        });
+    });
+</script>
+
+
+
+
+</body>
+</html>

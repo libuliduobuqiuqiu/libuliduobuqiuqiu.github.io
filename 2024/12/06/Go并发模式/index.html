@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="linshukai">
+    
+    <title>
+        
+            Go并发模式 |
+        
+        LINSHUKAI&#39;S BLOG
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    
+        <link rel="shortcut icon" href="/images/lsk_favicon.png">
+    
+    
+<link rel="stylesheet" href="/font/css/fontawesome.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/regular.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/solid.min.css">
+
+    
+<link rel="stylesheet" href="/font/css/brands.min.css">
+
+    
+    <script class="keep-theme-configurations">
+    const KEEP = window.KEEP || {}
+    KEEP.hexo_config = {"hostname":"example.com","root":"/","language":"zh-CN","path":"search.json"}
+    KEEP.theme_config = {"toc":{"enable":true,"number":true,"expand_all":true,"init_open":true},"style":{"primary_color":"#0066cc","logo":"/images/lsk_logo.png","favicon":"/images/lsk_favicon.png","avatar":"/images/lsk_avatar.jpg","font_size":null,"font_family":null,"hover":{"shadow":true,"scale":false},"first_screen":{"enable":true,"header_transparent":false,"background_img":"/images/bg.svg","description":"Keep writing and Keep loving.","font_color":null,"hitokoto":false},"scroll":{"progress_bar":true,"percent":false}},"local_search":{"enable":true,"preload":true},"code_block":{"tools":{"enable":true,"style":"default"},"highlight_theme":"default"},"pjax":{"enable":true},"lazyload":{"enable":true},"comment":{"enable":false,"use":"valine","valine":{"appid":null,"appkey":null,"server_urls":null,"placeholder":null},"gitalk":{"github_id":null,"github_admins":null,"repository":null,"client_id":null,"client_secret":null,"proxy":null},"twikoo":{"env_id":null,"region":null,"version":"1.6.8"},"waline":{"server_url":null,"reaction":false,"version":2}},"post":{"author_label":{"enable":true,"auto":true,"custom_label_list":["Trainee","Engineer","Architect"]},"word_count":{"enable":true,"wordcount":true,"min2read":true},"img_align":"left","copyright_info":true},"website_count":{"busuanzi_count":{"enable":true,"site_uv":true,"site_pv":true,"page_pv":true}},"version":"3.8.6"}
+    KEEP.language_ago = {"second":"%s 秒前","minute":"%s 分钟前","hour":"%s 小时前","day":"%s 天前","week":"%s 周前","month":"%s 个月前","year":"%s 年前"}
+    KEEP.language_code_block = {"copy":"复制代码","copied":"已复制","fold":"折叠代码块","folded":"已折叠"}
+    KEEP.language_copy_copyright = {"copy":"复制版权信息","copied":"已复制","title":"原文标题","author":"原文作者","link":"原文链接"}
+  </script>
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+        <span class="scroll-progress-bar"></span>
+    
+
+    
+        <span class="pjax-progress-bar"></span>
+        <i class="pjax-progress-icon fas fa-circle-notch fa-spin"></i>
+    
+</div>
+
+
+<main class="page-container border-box">
+
+    <!-- home first screen  -->
+    
+
+    <!-- page content -->
+    <div class="page-main-content border-box">
+        <div class="page-main-content-top">
+            
+<header class="header-wrapper">
+
+    <div class="border-box header-content">
+        <div class="left border-box">
+            
+                <a class="logo-image border-box" href="/">
+                    <img src="/images/lsk_logo.png">
+                </a>
+            
+            <a class="site-name border-box" href="/">
+               LINSHUKAI&#39;S BLOG
+            </a>
+        </div>
+
+        <div class="right border-box">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                首页
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                归档
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/tags"
+                            >
+                                标签
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/categories"
+                            >
+                                分类
+                            </a>
+                        </li>
+                    
+                    
+                        <li class="menu-item search search-popup-trigger">
+                            <i class="fas fa-search"></i>
+                        </li>
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                    <div class="icon-item search search-popup-trigger"><i class="fas fa-search"></i></div>
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/tags">标签</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/categories">分类</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle border-box">
+
+            <div class="main-content border-box">
+
+                
+
+                    <div class="fade-in-down-animation">
+    <div class="post-page-container border-box">
+
+        <div class="article-content-container border-box">
+
+            
+
+            <div class="article-content-bottom border-box">
+                
+                    <div class="article-title">
+                        Go并发模式
+                    </div>
+                
+
+                
+                    <div class="article-header border-box">
+                        
+                            <div class="avatar-box border-box">
+                                <img src="/images/lsk_avatar.jpg">
+                            </div>
+                        
+                        <div class="info-box">
+                            <div class="author">
+                                <span class="name">linshukai</span>
+                                
+                                    <span class="author-label">Lv2</span>
+                                
+                            </div>
+                            <div class="meta-info border-box">
+                                
+
+<div class="article-meta-info-container border-box post">
+    <div class="article-meta-info border-box">
+        
+
+
+        
+            <span class="meta-info-item article-create-date">
+                <i class="icon fa-solid fa-calendar-check"></i>&nbsp;
+                <span class="pc">2024-12-06 15:09:00</span>
+                <span class="mobile">2024-12-06 15:09</span>
+            </span>
+
+            <span class="meta-info-item article-update-date">
+                <i class="icon fa-solid fa-file-pen"></i>&nbsp;
+                <span class="pc" data-updated="Mon Jul 28 2025 09:29:23 GMT+0000">2025-07-28 09:29:23</span>
+            </span>
+        
+
+        
+            <span class="meta-info-item article-category border-box"><i class="icon fas fa-folder"></i>&nbsp;
+                <ul class="article-category-ul">
+                    
+                            <li class="category-item"><a href="/categories/Go/">Go</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+            <span class="article-tag meta-info-item border-box">
+                <i class="icon fas fa-tags"></i>&nbsp;
+                <ul class="article-tag-ul">
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Go/">Go</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Goroutine/">Goroutine</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/%E8%B0%83%E5%BA%A6/">调度</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Context/">Context</a></li>
+                        
+                    
+                            <li class="tag-item"><span class="tag-separator"><i class="icon fas fa-hashtag"></i></span><a href="/tags/Channel/">Channel</a></li>
+                        
+                    
+                </ul>
+            </span>
+        
+
+        
+        
+            <span class="meta-info-item article-wordcount">
+                <i class="icon fas fa-file-word"></i>&nbsp;<span>3.7k 字</span>
+            </span>
+        
+        
+            <span class="meta-info-item article-min2read">
+                <i class="icon fas fa-clock"></i>&nbsp;<span>14 分钟</span>
+            </span>
+        
+        
+            <span class="meta-info-item article-pv">
+                <i class="icon fas fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+            </span>
+        
+    </div>
+
+    
+</div>
+
+                            </div>
+                        </div>
+                    </div>
+                
+
+                <div class="article-content keep-markdown-body">
+                    
+
+                    <h2 id="并发"><a href="#并发" class="headerlink" title="并发"></a>并发</h2><p>常用并发控制：</p>
+<ul>
+<li>WaitGroup</li>
+<li>Context</li>
+<li>Channel</li>
+<li>Mutex,RWMutex</li>
+</ul>
+<h3 id="Go-Scheduler"><a href="#Go-Scheduler" class="headerlink" title="Go Scheduler"></a>Go Scheduler</h3><blockquote>
+<p>Go程序主要包含Go Program、Go Runtime，即用户程序和运行时。他们之间通过函数调用实现内存分配，垃圾回收，并发调度等功能。用户程序进行的<br>系统调用都会被Runtime拦截，以此帮助它进行调度以及垃圾回收工作。一般用户程序无法直接和系统内核交换，都是通过Runtim间接交互。<br>Go Scheduler是Runtime最重要的一部分，Runtime维护所有的Goroutines，并通过scheduler进行调度，goroutines和threads是独立分开，但是goroutines<br>要依赖threads才能执行。</p>
+</blockquote>
+<p>并发和并行之间的区别：</p>
+<ul>
+<li>并发指的是在一个处理器上，一段时间内执行多个任务，更加注重的是任务之间交替执行。（多个事件在同一时间间隔内交替执行）</li>
+<li>并行指的是多个处理器上同时处理多个任务（不同事件在多个实体是同时执行）</li>
+</ul>
+<p>Goroutine和Thread之间的区别？</p>
+<ul>
+<li>内存占用：创建Goroutine的栈内存消耗2KB，栈空间不够用，会自动扩容；创建Thread的栈内存消耗1MB。</li>
+<li>创建和销毁：Goroutine创建和销毁是Go runtime进行管理消耗资源小，属于用户级；Thread创建和销毁需要和操作系统进行交互，属于内核级。</li>
+<li>切换：Goroutine切换是由Go runtime进行管理，切换只需要少量的上下文信息，开销非常小；Thread切换需要保存和回复线程的上下文信息，需要较多的时间和资源。</li>
+</ul>
+<h4 id="设计原理"><a href="#设计原理" class="headerlink" title="设计原理"></a>设计原理</h4><p>GMP 调度模型:</p>
+<ul>
+<li>G(Goroutine): 表示Goroutine，它是一个待执行的任务。</li>
+<li>M(Machine)：表示操作系统的线程，它由操作系统调度器调度和管理。</li>
+<li>P(Processor)：表示处理器，负责调度和管理它的Goroutine队列，将Goroutine分配给对应的M执行。(Processor的数量是GOMAXPROCS，默认为CPU核心数量)</li>
+<li>GRQ：存储全局可运行的Goroutines。</li>
+<li>LRQ：存储本地（P）上可运行的Goroutines。</li>
+</ul>
+<p>goroutine可能发生调度：</p>
+<ul>
+<li>go关键字,创建一个新的goroutine，go scheduler会考虑调度。</li>
+<li>GC，由于进行GC的Goroutine也需要在M上进行，因此肯定会发生调度。</li>
+<li>系统调用，当一个goroutine进行系统调用，会阻塞M，所以它会被调度走，其他的Goroutine会被调度上来。</li>
+<li>内存同步访问，atomic、channel、mutex操作会使goroutine阻塞，因此会被调度走。</li>
+</ul>
+<p>什么是M:N模型？</p>
+<blockquote>
+<p>Go runtime会负责goroutine的创建和销毁，Runtime会在程序启动时，会启动M个线程（CPU执行调度单位），之后创建的N个Goroutines会在线程上<br>执行。<br>在同一个时刻，在一个线程上只能执行一个Goroutine，当Goroutine执行过程阻塞了，调度器会将当前的Goroutine调走，让其他Goroutine执行。</p>
+</blockquote>
+<p>什么是工作窃取？</p>
+<blockquote>
+<p>Go scheduler需要保证runnable goroutines均匀分布在P上运行的M。<br>M需要绑定P，获取P的LRQ上的Goroutine，然后才能执行。当M上出现系统调用阻塞，P会释放和M的绑定，找到其他可用的M执行P上LRQ的Goroutine。<br>当P的LRQ的Goroutine为空之后，并且这是GRQ上也没有Goroutine，P会从其他P的LRQ上“偷取”一半的G。<br>(当系统调用阻塞时M才会解绑P；而当非阻塞I&#x2F;O，比如一些网络I&#x2F;O，会有Net Poller处理，会将I&#x2F;O操作注册到事件通知机制中，Net Poller会异步等待<br>这些事件完成，不会阻塞当前Goroutine或M，当网络事件完成后Net poller会将Goroutine注入到GRQ，P会调度一个空闲的M执行。)</p>
+</blockquote>
+<p>协作式调度和抢占式调度？</p>
+<blockquote>
+<p>协作式调度依靠调度方主动弃权；抢占式调度依靠调度器强制将被调方被动中断。</p>
+</blockquote>
+<p>基于协作的抢占式调度：</p>
+<ol>
+<li>编译器会在被调函数前插入runtime.morestack(抢占标志检测)；</li>
+<li>Go语言会在运行时，会在垃圾回收暂停程序、系统监控发现Goroutine运行超过10ms，会设置Goroutine的stackguard0为StackPreempt(抢占标志位);</li>
+<li>在发生函数调用时，可能会执行runtime.morestack，它调用的runtime.newstack会检测Goroutine的stackguard0字段是否为StackPreempt；</li>
+<li>如果是StackPreempt则触发抢占让出线程；<br>(这里的函数检测是编译器插入的，但是需要函数调用作为入口触发抢占，所以这算是一个协作式的抢占调度？)</li>
+</ol>
+<h4 id="基于信号的抢占式调度"><a href="#基于信号的抢占式调度" class="headerlink" title="基于信号的抢占式调度"></a>基于信号的抢占式调度</h4><blockquote>
+<p>在以往的基于协作的抢占式调度只有在函数调用离设置抢占标志位，对于不是函数就没有办法。如果是一个纯算法循环计算，Go调度器就没办法，可能还是<br>会出现饥饿的问题。</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> x = <span class="number">0</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; runtime.GOMAXPROCS(<span class="number">0</span>); i++ &#123;</span><br><span class="line">		fmt.Println(i)</span><br><span class="line">		<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			<span class="keyword">for</span> &#123;</span><br><span class="line">				x++</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;hello,world&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>按照协作式调度的方法，启动和CPU核心相等的goroutine，goroutine无限循环。这样可能导致M和P都被占满了，一直无限循环。<br>其他的Goroutine想要执行，会一直等待，出现饥饿。</p>
+<p>基于信号的抢占式调度流程：</p>
+<ol>
+<li>M注册一个SIGURG信号处理的函数：sighandler。</li>
+<li>sysmon启动间隔性性能监控，发现超过Goroutine运行超过10ms，向M发送抢占信号。</li>
+<li>M接收到信号之后，内核中断器执行的代码，执行注册信号处理函数，将当前Goroutine的状态从_Grunning改成Grunnable，把抢占的<br>Goroutine放到全局队列中，M继续从P中找其他的Goroutine执行。</li>
+<li>被抢占的P再次调过来会继续原来的执行流。</li>
+</ol>
+<h4 id="源码阅读"><a href="#源码阅读" class="headerlink" title="源码阅读"></a>源码阅读</h4><p>调度启动（初始化）：</p>
+<ul>
+<li>设置maxmcount&#x3D;10000,Go能够创建的最大线程，获取GOMAXPROCS环境变量。</li>
+<li>根据GOMAXPROCS环境变量，调用runtime.procsize更新程序中的处理器数量。</li>
+<li>调用runtime.procsize是初始化的最后一步，调度器在这之后完成响应数量处理器启动，等待用户创建的<br>Goroutine并为Goroutine调度处理器资源。</li>
+</ul>
+<p>runtime.procsize:</p>
+<ol>
+<li>如果全局变量 allp 切片中的处理器数量少于期望数量，会对切片进行扩容；</li>
+<li>使用 new 创建新的处理器结构体并调用 runtime.p.init 初始化刚刚扩容的处理器；</li>
+<li>通过指针将线程 m0 和处理器 allp[0] 绑定到一起；</li>
+<li>调用 runtime.p.destroy 释放不再使用的处理器结构；</li>
+<li>通过截断改变全局变量 allp 的长度保证与期望处理器数量相等；</li>
+<li>将除 allp[0] 之外的处理器 P 全部设置成 _Pidle 并加入到全局的空闲队列中；<br>(初始化处理器，保证处理器队列和期望处理器数量相等，绑定m0和处理器allp[0]，将除allp[0]之外的处理器放入全局的空闲队列中)</li>
+</ol>
+<h4 id="额外问题"><a href="#额外问题" class="headerlink" title="额外问题"></a>额外问题</h4><p>Goroutine 数量怎么限制？能在多少个线程上运行？</p>
+<blockquote>
+<p>Channel sync.WaitGroup</p>
+</blockquote>
+<p>Go的Selec语句？Select机制？</p>
+<blockquote>
+<p>Select监听Channel，每个case是一个事件，如果所有case事件阻塞会执行default语句逻辑</p>
+</blockquote>
+<h3 id="Channel"><a href="#Channel" class="headerlink" title="Channel"></a>Channel</h3><p>什么是CSP模型？</p>
+<blockquote>
+<p>不要通过共享内存进行通信，而是试过通信实现内存共享。<br>Go依赖CSP模型，基于Channel实现，Go并发原则就是尽量使用Channel，把goroutine作为免费资源使用；</p>
+</blockquote>
+<p>Channel是什么？为什么安全？</p>
+<ul>
+<li>发送和接收都是原子性的;</li>
+<li>Channel是一个管道，通过管道进行通信，数据是先进先出（FIFO)</li>
+<li>Go的并发设计思想就是通过通信来共享内存，而不是通过内存来通信（前者通过Channel、后者通过锁）</li>
+</ul>
+<p>读取一个已关闭的Channel？</p>
+<blockquote>
+<p>当Channel已关闭，如果是有缓冲的，如果里面存在数据依然可以正常读取，当里面没有数据，返回的ok标识则为false；</p>
+</blockquote>
+<p>Channel操作总结:</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>nil channel</th>
+<th>closed channel</th>
+<th>not nil,not closed channel</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>close</td>
+<td>panic</td>
+<td>panic</td>
+<td>正常关闭</td>
+</tr>
+<tr>
+<td>读&lt;-ch</td>
+<td>panic</td>
+<td>读到对应类型的零值</td>
+<td>阻塞或者正常读取数据，缓冲型channel为空时和非缓冲型channel没有等待发送者时会阻塞</td>
+</tr>
+<tr>
+<td>写ch&lt;-</td>
+<td>panic</td>
+<td>panic</td>
+<td>阻塞或者正常写入数据，缓冲型channel buf满时和非缓冲型channel没有等待接收者是会阻塞</td>
+</tr>
+</tbody></table>
+<p>如何优雅关闭一个Channel？</p>
+<blockquote>
+<p>已知关闭一个已经关闭的channel和写入一个已经关闭的channel会出现panic<br>主要根据receiver和sender数量，分下面几种情况：</p>
+</blockquote>
+<ol>
+<li>1个sender,1个receiver</li>
+<li>1个sender,N个receiver</li>
+<li>N个sender,1个receiver</li>
+<li>N个sender,N个receiver<br>解决方案：</li>
+</ol>
+<ul>
+<li>1,2可以直接关闭sender</li>
+<li>3可以增加额外的关闭信号通道，receiver通过信号通道发送关闭数据channel指令，sender接收信号通道发送的关闭指令，停止发送数据</li>
+<li>4可以增加额外两个通道：关闭信号通道、中间人通道，receiver和sender需要关闭通道可以向中间人通道发送信息，让中间人关闭信号通道，sender和receiver接收到关闭信号通道指令然后退出；</li>
+</ul>
+<p>Channel发送和接收的本质是什么？</p>
+<blockquote>
+<p>All transfer of value on the go channels happens with the copy of value.<br>发送和接收的本质上都是“值的拷贝”</p>
+</blockquote>
+<p>Channel什么情况下发生泄漏？</p>
+<blockquote>
+<p>泄露的原因一般为goroutine操作channel后，处于发送或者接收阻塞状态，而channel处于满或空的状态一直不会改变。垃圾回收器不会回收此类资源。</p>
+</blockquote>
+<p>for-range读取Channel：</p>
+<blockquote>
+<p>遍历获取Channel中管道中的数据, 对于无缓冲通道，for range会在每次接收操作时阻塞，直到其他协程向通道写入数据；对于有缓冲通道，会读取缓冲区的所有<br>数据，当缓冲区为空，会阻塞等待，直到有其他协程向通道写入数据；</p>
+</blockquote>
+<p>select：</p>
+<ul>
+<li>select是一种管道多路复用的控制结构，通过同时监测多个管道是否可用；</li>
+<li>select一般都有多个case和一个default组成，每个case是一个管道操作；</li>
+<li>当有多个case可用时，select会<strong>伪随机</strong>的选择一个case执行，当所有case不可用时，则执行default分支，如果没有default分支时，将会阻塞等待；</li>
+<li>select配合for，可实现循环无限监测管道，直到退出，配合time.After设置超时，可实现超时退出，通过break跳出for循环；</li>
+<li>select{}语句中什么case都没有，主协程会无限等待；</li>
+</ul>
+<p>Channel的几种使用场景：</p>
+<ul>
+<li>停止信号</li>
+<li>超时控制、定时执行某个任务</li>
+<li>goroutine并发数控制</li>
+<li>生产者消费者模型</li>
+</ul>
+<h3 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h3><p>Context使用场景?</p>
+<blockquote>
+<p>需要统一对多个goroutine执行“取消”动作，常用于并发控制和超时控制；(也可用于传递共享数据)</p>
+</blockquote>
+<h4 id="Context接口"><a href="#Context接口" class="headerlink" title="Context接口"></a>Context接口</h4><p>Context接口：</p>
+<ul>
+<li>Done() &lt;- chan struct{}:当Context被取消或者到Dealine，返回一个channel</li>
+<li>Err() error: 当channel Done被关闭后，返回context取消原因</li>
+<li>Dealine() (deadline time.Time, ok bool)：返回context截止时间</li>
+<li>Value()：返回之前设置key的value</li>
+</ul>
+<p>Context接口的几种实现：</p>
+<ul>
+<li>emptyCtx: Background(),TODO();</li>
+<li>cancelCtx: WithCancel();</li>
+<li>timerCtx: WithDeadline(),WithTimeOut;</li>
+<li>valueCtx: WithValue();</li>
+</ul>
+<h4 id="emptyCtx"><a href="#emptyCtx" class="headerlink" title="emptyCtx"></a>emptyCtx</h4><blockquote>
+<p>emptyCtx就是空的上下文，可以通过context.Background(),context.TODO()函数创建；emptyCtx一般当做最顶层的上下文，在创建其他上下文是作为父上下文传入。</p>
+</blockquote>
+<h4 id="valueCtx"><a href="#valueCtx" class="headerlink" title="valueCtx"></a>valueCtx</h4><blockquote>
+<p>valueCtx比较简单，除了内嵌一个Context类型, 并且包含了一对key、value键值对；本身只实现了Value方法，用于寻找value，在当前上下文找不到就会去父上下文找，一直递归寻找;</p>
+</blockquote>
+<p>Context.Value的查找过程是怎样？</p>
+<ul>
+<li>context.Value设置value，通过将context包起来，设置key，value；</li>
+<li>context查找过程中，每个context指向父context，根据指向循环遍历，然后判断比较是否存在对应的value(递归查找过程)；</li>
+</ul>
+<h4 id="cancelCtx"><a href="#cancelCtx" class="headerlink" title="cancelCtx"></a>cancelCtx</h4><blockquote>
+<p>cancelCtx和timerCtx都实现了canceler接口;WithCancel()返回一个cancelCtx，以及方法，返回的方法是创建上下文时，不对外暴露其中的cancel方法，通过闭包将其包装为返回值给外部调用;</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> canceler <span class="keyword">interface</span> &#123;</span><br><span class="line">    <span class="comment">// removeFromParent 表示是否从父上下文中删除自身</span></span><br><span class="line">    <span class="comment">// err 表示取消的原因</span></span><br><span class="line">	cancel(removeFromParent <span class="type">bool</span>, err <span class="type">error</span>)</span><br><span class="line">    <span class="comment">// Done 返回一个管道，用于通知取消的原因</span></span><br><span class="line">	Done() &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>context如何被取消？</p>
+<ul>
+<li>Done()返回一个只读的Channel，通过select，只有当chanel的关闭的时候才能读取到零值；</li>
+<li>Cancel()，关闭Channel，c.done；取消它的所有子节点；从父节点删除自己。达到的效果就是通过关闭channel，然后发送取消信号到它所有子节点；</li>
+</ul>
+<p>done()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *cancelCtx)</span></span> Done() &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125; &#123;</span><br><span class="line">	d := c.done.Load()</span><br><span class="line">	<span class="keyword">if</span> d != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> d.(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	c.mu.Lock()</span><br><span class="line">	<span class="keyword">defer</span> c.mu.Unlock()</span><br><span class="line">	d = c.done.Load()</span><br><span class="line">	<span class="keyword">if</span> d == <span class="literal">nil</span> &#123;</span><br><span class="line">		d = <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line">		c.done.Store(d)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> d.(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>返回ctx上的done通道</p>
+</blockquote>
+<p>cancel()</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"> d, _ := c.done.Load().(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line"><span class="keyword">if</span> d == <span class="literal">nil</span> &#123;</span><br><span class="line">	c.done.Store(closedchan)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	<span class="built_in">close</span>(d)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>调用退出方法，关闭ctx上的通道；</p>
+</blockquote>
+<p>实际使用</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">UseCancelCtx</span><span class="params">()</span></span> &#123;</span><br><span class="line">	ctx, cancel := context.WithCancel(context.Background())</span><br><span class="line"></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		time.Sleep(<span class="number">2</span> * time.Second)</span><br><span class="line">		cancel()</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> &lt;-ctx.Done():</span><br><span class="line">			fmt.Println(<span class="string">&quot;Done&quot;</span>)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		<span class="keyword">case</span> &lt;-time.After(<span class="number">10</span> * time.Second):</span><br><span class="line">			fmt.Println(<span class="string">&quot;TimeOut&quot;</span>)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="timerCtx"><a href="#timerCtx" class="headerlink" title="timerCtx"></a>timerCtx</h4><blockquote>
+<p>timerCtx是在cancelCtx的基础上增加了超时机制；提供了两个创建函数WithTimeOut和WithDeadline，前者是指定超时间隔，后者是具体指定超时时间；</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">UseTimerCtx</span><span class="params">()</span></span> &#123;</span><br><span class="line">	ctx, cancel := context.WithTimeout(context.Background(), <span class="number">10</span>*time.Second)</span><br><span class="line">	wg := sync.WaitGroup&#123;&#125;</span><br><span class="line">	wg.Add(<span class="number">1</span>)</span><br><span class="line">	<span class="keyword">defer</span> cancel()</span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">defer</span> wg.Done()</span><br><span class="line">		<span class="keyword">for</span> &#123;</span><br><span class="line">			<span class="keyword">select</span> &#123;</span><br><span class="line">			<span class="keyword">case</span> &lt;-ctx.Done():</span><br><span class="line">				fmt.Println(<span class="string">&quot;上下文取消：&quot;</span>, ctx.Err())</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			<span class="keyword">default</span>:</span><br><span class="line">				fmt.Println(<span class="string">&quot;等待取消中。。。&quot;</span>)</span><br><span class="line">				time.Sleep(<span class="number">200</span> * time.Millisecond)</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	wg.Wait()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="同步原语与锁"><a href="#同步原语与锁" class="headerlink" title="同步原语与锁"></a>同步原语与锁</h3><blockquote>
+<p>Go在sync包里面提供了基本的原语sync.Mutex:锁,sync.RWMutex:读写锁,sync.WaitGroup:等待组,sync.Cond:同步条件通知,sync.Once:懒加载，<br>sync.Pool:对象复用，sync.Map:并发安全的Map，sync&#x2F;atomic:原子操作;</p>
+</blockquote>
+<h3 id="锁"><a href="#锁" class="headerlink" title="锁"></a>锁</h3><p>Go的几种锁（使用场景）：</p>
+<ul>
+<li>互斥锁(sync.Mutex)</li>
+<li>读写锁(sync.RWMutex)-写时不可读、读时不可写、不可并发写、可以并发读</li>
+<li>sync.Map(并发安全的底层原理)</li>
+</ul>
+<p>数据竞争如何解决？</p>
+<blockquote>
+<p>锁、Channel、CAS操作</p>
+</blockquote>
+<p>原子操作，CAS算法</p>
+<h3 id="WaitGroup"><a href="#WaitGroup" class="headerlink" title="WaitGroup"></a>WaitGroup</h3><p>并发场景：</p>
+<ul>
+<li>限制主协程在所有协程完成后才能执行；(sync.WaitGroup)</li>
+<li>内部实现就是计数器+信号量，协程开始时Add初始化信号量，结束后调用Done，计数-1，直到减为0，主协程会调用Wait一直阻塞等待计数为0时，才会被唤醒；</li>
+</ul>
+
+                </div>
+
+                
+                        
+<div class="article-copyright-info-container border-box">
+    <div class="copyright-info-content border-box">
+        <div class="copyright-info-top border-box">
+            <div class="post-title border-box text-ellipsis">
+                Go并发模式
+            </div>
+
+            <div class="post-link border-box text-ellipsis">
+                2024/12/06/Go并发模式/
+            </div>
+        </div>
+
+        <div class="copyright-info-bottom border-box">
+            <div class="post-author bottom-item">
+                <div class="type">
+                    作者
+                </div>
+                <div class="content">linshukai</div>
+            </div>
+
+            <div class="post-time bottom-item">
+                <div class="type">
+                    发布于
+                </div>
+                <div class="content">2024-12-06 15:09</div>
+            </div>
+
+
+            <div class="post-license bottom-item">
+                <div class="type">
+                    许可
+                </div>
+                <div class="content tooltip" data-tooltip-content="CC BY-NC-SA 4.0">
+                    <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans">
+                        <i class="fa-brands fa-creative-commons"></i>
+                        <i class="fa-brands fa-creative-commons-by"></i>
+                        <i class="fa-brands fa-creative-commons-nc"></i>
+                        <i class="fa-brands fa-creative-commons-sa"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <i class="copyright-bg fa-solid fa-copyright"></i>
+    </div>
+    <div class="copy-copyright-info flex-center tooltip" data-tooltip-content="复制版权信息" data-tooltip-offset-y="-2px">
+        <i class="fa-solid fa-copy"></i>
+    </div>
+</div>
+
+                
+
+                <div class="post-bottom-tags-and-share border-box">
+                    <div>
+                        
+                            <ul class="post-tags-box border-box">
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Go/">Go</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Goroutine/">Goroutine</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/%E8%B0%83%E5%BA%A6/">调度</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Context/">Context</a>
+                                    </li>
+                                
+                                    <li class="tag-item border-box">
+                                        <i class="icon fas fa-hashtag"></i>&nbsp;<a href="/tags/Channel/">Channel</a>
+                                    </li>
+                                
+                            </ul>
+                        
+                    </div>
+                    <div>
+                        
+                    </div>
+                </div>
+
+                
+
+                
+                    <div class="article-nav">
+                        
+                            <div class="article-prev">
+                                <a class="prev"
+                                   rel="prev"
+                                   href="/2025/07/28/%E5%85%B3%E4%BA%8EAI%E6%97%B6%E4%BB%A3%E7%9A%84%E4%B8%80%E7%82%B9%E6%80%9D%E8%80%83/"
+                                   title="关于AI时代的一点思考"
+                                >
+                                    <span class="left arrow-icon flex-center">
+                                      <i class="fas fa-chevron-left"></i>
+                                    </span>
+                                            <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">关于AI时代的一点思考</span>
+                                        <span class="post-nav-item">上一篇</span>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                        
+                            <div class="article-next">
+                                <a class="next"
+                                   rel="next"
+                                   href="/2024/06/17/Go%E5%8F%8D%E5%B0%84%E6%9C%BA%E5%88%B6/"
+                                   title="Go反射机制"
+                                >
+                                    <span class="title flex-center">
+                                        <span class="post-nav-title-item text-ellipsis">Go反射机制</span>
+                                        <span class="post-nav-item">下一篇</span>
+                                    </span>
+                                            <span class="right arrow-icon flex-center">
+                                      <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </a>
+                            </div>
+                        
+                    </div>
+                
+
+                
+                    
+
+
+
+
+
+
+                
+            </div>
+        </div>
+
+        
+            <div class="pc-post-toc right-toc">
+                <div class="post-toc-wrap border-box">
+    <div class="post-toc border-box">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91"><span class="nav-number">1.</span> <span class="nav-text">并发</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Go-Scheduler"><span class="nav-number">1.1.</span> <span class="nav-text">Go Scheduler</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.1.</span> <span class="nav-text">设计原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E4%BF%A1%E5%8F%B7%E7%9A%84%E6%8A%A2%E5%8D%A0%E5%BC%8F%E8%B0%83%E5%BA%A6"><span class="nav-number">1.1.2.</span> <span class="nav-text">基于信号的抢占式调度</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.3.</span> <span class="nav-text">源码阅读</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A2%9D%E5%A4%96%E9%97%AE%E9%A2%98"><span class="nav-number">1.1.4.</span> <span class="nav-text">额外问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Channel"><span class="nav-number">1.2.</span> <span class="nav-text">Channel</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Context"><span class="nav-number">1.3.</span> <span class="nav-text">Context</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Context%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.3.1.</span> <span class="nav-text">Context接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#emptyCtx"><span class="nav-number">1.3.2.</span> <span class="nav-text">emptyCtx</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#valueCtx"><span class="nav-number">1.3.3.</span> <span class="nav-text">valueCtx</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cancelCtx"><span class="nav-number">1.3.4.</span> <span class="nav-text">cancelCtx</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#timerCtx"><span class="nav-number">1.3.5.</span> <span class="nav-text">timerCtx</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E5%8E%9F%E8%AF%AD%E4%B8%8E%E9%94%81"><span class="nav-number">1.4.</span> <span class="nav-text">同步原语与锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%81"><span class="nav-number">1.5.</span> <span class="nav-text">锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WaitGroup"><span class="nav-number">1.6.</span> <span class="nav-text">WaitGroup</span></a></li></ol></li></ol>
+    </div>
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom border-box">
+            
+<footer class="footer border-box">
+    <div class="border-box website-info-box default">
+        
+            <div class="copyright-info info-item default">
+                &copy;&nbsp;<span>2020</span>&nbsp;-&nbsp;2025
+                
+                    &nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;&nbsp;<a href="/">linshukai</a>
+                
+            </div>
+
+            <div class="theme-info info-item default">
+                由&nbsp;<a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;驱动&nbsp;&&nbsp;主题&nbsp;<a class="keep-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep</a>
+            </div>
+
+            
+
+            
+        
+
+        <div class="count-item info-item default">
+            
+
+            
+                <span class="count-box border-box uv">
+                    <span class="item-type border-box">访客数</span>
+                    <span class="item-value border-box uv" id="busuanzi_value_site_uv"></span>
+                </span>
+            
+
+            
+                <span class="count-box border-box pv">
+                    <span class="item-type border-box">访问量</span>
+                    <span class="item-value border-box pv" id="busuanzi_value_site_pv"></span>
+                </span>
+            
+        </div>
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    <!-- post tools -->
+    
+        <div class="post-tools right-toc">
+            <div class="post-tools-container border-box">
+    <ul class="tools-list border-box">
+        <!-- PC TOC show toggle -->
+        
+            <li class="tools-item flex-center toggle-show-toc">
+                <i class="fas fa-list"></i>
+            </li>
+        
+
+        <!-- PC go comment -->
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <!-- side tools -->
+    <div class="side-tools">
+        <div class="side-tools-container border-box ">
+    <ul class="side-tools-list side-tools-show-handle border-box">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list border-box">
+        
+            <li class="tools-item toggle-show-toc-tablet flex-center">
+                <i class="fas fa-list"></i>
+            </li>
+        
+
+        
+
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+
+        <li class="tools-item tool-scroll-to-top flex-center show-arrow">
+            <i class="arrow fas fa-arrow-up"></i>
+            <span class="percent"></span>
+        </li>
+    </ul>
+</div>
+
+    </div>
+
+    <!-- image mask -->
+    <div class="zoom-in-image-mask">
+    <img class="zoom-in-image">
+</div>
+
+
+    <!-- local search -->
+    
+        <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-input-field-pre">
+            <i class="fas fa-keyboard"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="close-popup-btn">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fas fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+    <!-- tablet toc -->
+    
+        <div class="tablet-post-toc-mask">
+            <div class="tablet-post-toc">
+                <div class="post-toc-wrap border-box">
+    <div class="post-toc border-box">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%B6%E5%8F%91"><span class="nav-number">1.</span> <span class="nav-text">并发</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Go-Scheduler"><span class="nav-number">1.1.</span> <span class="nav-text">Go Scheduler</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.1.</span> <span class="nav-text">设计原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E4%BF%A1%E5%8F%B7%E7%9A%84%E6%8A%A2%E5%8D%A0%E5%BC%8F%E8%B0%83%E5%BA%A6"><span class="nav-number">1.1.2.</span> <span class="nav-text">基于信号的抢占式调度</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB"><span class="nav-number">1.1.3.</span> <span class="nav-text">源码阅读</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A2%9D%E5%A4%96%E9%97%AE%E9%A2%98"><span class="nav-number">1.1.4.</span> <span class="nav-text">额外问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Channel"><span class="nav-number">1.2.</span> <span class="nav-text">Channel</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Context"><span class="nav-number">1.3.</span> <span class="nav-text">Context</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Context%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.3.1.</span> <span class="nav-text">Context接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#emptyCtx"><span class="nav-number">1.3.2.</span> <span class="nav-text">emptyCtx</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#valueCtx"><span class="nav-number">1.3.3.</span> <span class="nav-text">valueCtx</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cancelCtx"><span class="nav-number">1.3.4.</span> <span class="nav-text">cancelCtx</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#timerCtx"><span class="nav-number">1.3.5.</span> <span class="nav-text">timerCtx</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E5%8E%9F%E8%AF%AD%E4%B8%8E%E9%94%81"><span class="nav-number">1.4.</span> <span class="nav-text">同步原语与锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%81"><span class="nav-number">1.5.</span> <span class="nav-text">锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WaitGroup"><span class="nav-number">1.6.</span> <span class="nav-text">WaitGroup</span></a></li></ol></li></ol>
+    </div>
+</div>
+
+            </div>
+        </div>
+    
+</main>
+
+
+
+<!-- common -->
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+
+<!-- local-search -->
+
+    
+<script src="/js/local-search.js"></script>
+
+
+
+<!-- code-block -->
+
+    
+<script src="/js/code-block.js"></script>
+
+
+
+<!-- lazyload -->
+
+    
+<script src="/js/lazyload.js"></script>
+
+
+
+<div class="pjax">
+    
+        <!-- post-helper -->
+        
+<script src="/js/post/post-helper.js"></script>
+
+
+        <!-- toc -->
+        
+            
+<script src="/js/post/toc.js"></script>
+
+        
+
+        <!-- copyright-info -->
+        
+            
+<script src="/js/post/copyright-info.js"></script>
+
+        
+
+        <!-- share -->
+        
+    
+
+    <!-- category-page -->
+    
+
+    <!-- links-page -->
+    
+</div>
+
+<!-- mermaid -->
+
+
+<!-- pjax -->
+
+    
+<script src="/js/libs/pjax.min.js"></script>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        window.pjax = new Pjax({
+            selectors: [
+                'head title',
+                '.page-container',
+                '.pjax'
+            ],
+            history: true,
+            debug: false,
+            cacheBust: false,
+            timeout: 0,
+            analytics: false,
+            currentUrlFullReload: false,
+            scrollRestoration: false,
+        });
+
+        document.addEventListener('pjax:send', () => {
+            KEEP.utils.pjaxProgressBarStart()
+        });
+
+        document.addEventListener('pjax:complete', () => {
+            KEEP.utils.pjaxProgressBarEnd()
+            window.pjax.executeScripts(document.querySelectorAll('script[data-pjax], .pjax script'))
+            KEEP.initExecute()
+        });
+    });
+</script>
+
+
+
+
+</body>
+</html>
